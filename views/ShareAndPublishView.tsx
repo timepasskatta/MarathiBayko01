@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Profile, Answers, Question, QuizTemplate, SessionData } from '../types';
 import { generateId } from '../utils/helpers';
 import Button from '../components/Button';
@@ -20,10 +21,18 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [isPublished, setIsPublished] = useState(false);
+  
+  // This ref acts as a flag to prevent the session creation logic from running more than once.
+  // This is the key fix for the infinite loop/crash on the deployed site.
+  const sessionCreatedRef = useRef(false);
 
 
   useEffect(() => {
-    if (creatorProfile) {
+    // We only want to create the session and invitation code ONCE.
+    if (creatorProfile && !sessionCreatedRef.current) {
+      // Set the flag to true immediately to prevent re-runs.
+      sessionCreatedRef.current = true;
+      
       const newSessionId = generateId();
       setInvitationCode(newSessionId);
 
@@ -36,7 +45,7 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
       
       onSessionCreated(sessionData);
     }
-  }, [creatorProfile, creatorAnswers, questionsUsed, onSessionCreated]);
+  }, [creatorProfile, creatorAnswers, questionsUsed, onSessionCreated]); // Dependencies are kept for hook linting rules.
 
   const handleCopy = () => {
     if (invitationCode) {
