@@ -38,7 +38,8 @@ const ProfileSetupView: React.FC<ProfileSetupViewProps> = ({ userType, onSave, o
   return (
     <Card className="relative pt-12">
       {onBack && <BackButton onClick={onBack} />}
-      <h2 className="text-2xl font-bold text-center mb-6">Create Your Profile ({userType})</h2>
+      <h2 className="text-2xl font-bold text-center mb-2">Create Your Profile ({userType})</h2>
+      <p className="text-center text-gray-500 mb-6">This info will be shown on the final results page.</p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name*</label>

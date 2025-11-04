@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Profile, Answers, Question, QuizTemplate, SessionData } from '../types';
 import { generateId } from '../utils/helpers';
@@ -25,30 +22,30 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
   const [description, setDescription] = useState('');
   const [isPublished, setIsPublished] = useState(false);
   
-  // This ref acts as a flag to prevent the session creation logic from running more than once.
-  // This is the key fix for the infinite loop/crash on the deployed site.
   const sessionCreatedRef = useRef(false);
 
-
   useEffect(() => {
-    // We only want to create the session and invitation code ONCE.
     if (creatorProfile && !sessionCreatedRef.current) {
-      // Set the flag to true immediately to prevent re-runs.
       sessionCreatedRef.current = true;
       
-      const newSessionId = generateId();
-      setInvitationCode(newSessionId);
-
       const sessionData: SessionData = {
         creatorProfile,
         creatorAnswers,
         questionsUsed,
       };
-      localStorage.setItem(`session-${newSessionId}`, JSON.stringify(sessionData));
-      
-      onSessionCreated(sessionData);
+
+      // CRITICAL FIX: Encode the entire session data into the invitation code.
+      // This removes the dependency on localStorage and allows sharing across devices.
+      try {
+        const encodedData = btoa(JSON.stringify(sessionData));
+        setInvitationCode(encodedData);
+        onSessionCreated(sessionData);
+      } catch (error) {
+          console.error("Error encoding session data:", error);
+          setInvitationCode("Error: Could not generate code.");
+      }
     }
-  }, [creatorProfile, creatorAnswers, questionsUsed, onSessionCreated]); // Dependencies are kept for hook linting rules.
+  }, [creatorProfile, creatorAnswers, questionsUsed, onSessionCreated]);
 
   const handleCopy = () => {
     if (invitationCode) {
@@ -81,41 +78,49 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
   }
 
   if (!creatorProfile || !invitationCode) {
-    return <Card><p>Generating your invitation code...</p></Card>;
+    return <Card><p className="text-center animate-pulse">Generating your invitation code...</p></Card>;
   }
 
   return (
-    <Card className="text-center relative pt-12">
-      <BackButton onClick={onBack} />
-      <h2 className="text-2xl font-bold mb-4">Your Room is Ready!</h2>
-      <p className="text-gray-600 mb-6">
-        Share this invitation code with your partner. They can enter it on the home page to join.
-      </p>
-
-      <div className="bg-rose-50 border-2 border-dashed border-rose-200 rounded-lg p-4 mb-6">
-        <p className="text-gray-500 text-sm mb-2">Your Invitation Code</p>
-        <p className="text-4xl font-bold text-gray-800 tracking-widest font-mono">
-          {invitationCode}
+    <div className="space-y-6">
+      <Card className="text-center relative pt-12">
+        <BackButton onClick={onBack} />
+        <h2 className="text-2xl font-bold mb-4">✅ Your Quiz is Ready!</h2>
+        <p className="text-gray-600 mb-6">
+          Now, copy the special code below and send it to your partner. They'll use it on the home page to start the quiz.
         </p>
-      </div>
-      
-      <Button onClick={handleCopy}>
-        {copied ? 'Copied!' : 'Copy Invitation Code'}
-      </Button>
 
-      <div className="mt-8 pt-6 border-t border-gray-200 text-left">
-          <h3 className="text-xl font-bold mb-4">📣 Publish Your Quiz?</h3>
-          <p className="text-gray-500 mb-4 text-sm">Make your quiz public so others can take it from the home page feed.</p>
+        <div className="bg-rose-50 border-2 border-dashed border-rose-200 rounded-lg p-4 mb-6">
+          <p className="text-gray-500 text-sm mb-2">Your Unique Invitation Code</p>
+          <textarea
+            readOnly
+            className="w-full h-24 p-2 font-mono text-xs text-gray-600 bg-transparent border-none focus:ring-0 resize-none text-center"
+            value={invitationCode}
+          />
+        </div>
+        
+        <Button onClick={handleCopy}>
+          {copied ? 'Copied to Clipboard!' : 'Copy Invitation Code'}
+        </Button>
+      </Card>
+
+      <Card className="text-left">
+          <h3 className="text-xl font-bold mb-4">📣 Optional: Publish Your Quiz?</h3>
+          <p className="text-gray-500 mb-4 text-sm">
+              Want to let others play your quiz? Give it a title and description to add it to the public 'Community Quizzes' list on the home page.
+              <br/>
+              <strong>Note:</strong> Your answers will be used as the 'correct' answers for the public.
+          </p>
           
           <div className="space-y-4">
               <input type="text" placeholder="Quiz Title (e.g., 'For Movie Lovers')" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 border rounded"/>
               <textarea placeholder="Short Description" value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full p-2 border rounded"></textarea>
               <Button onClick={handlePublish} variant="secondary" disabled={!title || !description || isPublished}>
-                {isPublished ? 'Published!' : 'Publish to Public Feed'}
+                {isPublished ? 'Published to Community!' : 'Publish to Public Feed'}
               </Button>
           </div>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 };
 
