@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Profile, Answers, Question, QuizTemplate, SessionData } from '../types';
-import { generateId } from '../utils/helpers';
+import { generateId, encodeObjectToBase64 } from '../utils/helpers';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import BackButton from '../components/BackButton';
@@ -34,10 +34,8 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
         questionsUsed,
       };
 
-      // CRITICAL FIX: Encode the entire session data into the invitation code.
-      // This removes the dependency on localStorage and allows sharing across devices.
       try {
-        const encodedData = btoa(JSON.stringify(sessionData));
+        const encodedData = encodeObjectToBase64(sessionData);
         setInvitationCode(encodedData);
         onSessionCreated(sessionData);
       } catch (error) {

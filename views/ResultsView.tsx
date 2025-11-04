@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import CircularProgressBar from '../components/CircularProgressBar';
 import Confetti from '../components/Confetti';
 import { GoogleGenAI } from '@google/genai';
+import { encodeObjectToBase64 } from '../utils/helpers';
 
 interface ResultsViewProps {
   creatorProfile: Profile;
@@ -79,7 +80,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
           questionsUsed: validQuestions
       };
       try {
-        const encodedData = btoa(JSON.stringify(resultData));
+        const encodedData = encodeObjectToBase64(resultData);
         setResultCode(encodedData);
       } catch (error) {
         console.error("Error encoding result data:", error);

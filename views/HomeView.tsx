@@ -3,6 +3,7 @@ import { QuizTemplate, SessionData, AdSenseConfig, ResultData } from '../types';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import AdBanner from '../components/AdBanner';
+import { decodeBase64ToObject, validateSessionData, validateResultData } from '../utils/helpers';
 
 interface HomeViewProps {
   quizTemplates: QuizTemplate[];
@@ -21,49 +22,32 @@ const HomeView: React.FC<HomeViewProps> = ({ quizTemplates, onStartCreator, onSt
   const [resultCode, setResultCode] = useState('');
   const [resultError, setResultError] = useState('');
 
-  const handleJoin = (e: React.FormEvent) => {
+  const handleCodeSubmit = <TData,>(
+    e: React.FormEvent,
+    code: string,
+    setError: React.Dispatch<React.SetStateAction<string>>,
+    onSuccess: (data: TData) => void,
+    errorMessages: { empty: string; invalid: string; },
+    validationFn: (data: any) => data is TData
+  ) => {
     e.preventDefault();
-    if (!invitationCode.trim()) {
-      setJoinError('Please enter the code from your partner.');
+    if (!code.trim()) {
+      setError(errorMessages.empty);
       return;
     }
     try {
-      // The invitation code now contains the entire session data, encoded in Base64.
-      const decodedString = atob(invitationCode);
-      const sessionData = JSON.parse(decodedString) as SessionData;
-      // Basic validation
-      if (sessionData.creatorProfile && sessionData.creatorAnswers && sessionData.questionsUsed) {
-        onJoinQuiz(sessionData);
+      const decodedData = decodeBase64ToObject<TData>(code);
+      if (validationFn(decodedData)) {
+        onSuccess(decodedData);
       } else {
-        throw new Error("Invalid data structure in invitation code.");
+        throw new Error("Invalid data structure in code.");
       }
     } catch (error) {
-      console.error("Failed to parse invitation code:", error);
-      setJoinError('Invalid or corrupted invitation code. Please check and try again.');
+      console.error("Failed to parse code:", error);
+      setError(errorMessages.invalid);
     }
   };
 
-  const handleViewResultsSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!resultCode.trim()) {
-      setResultError('Please enter a result code.');
-      return;
-    }
-    try {
-      const decodedString = atob(resultCode);
-      const resultData = JSON.parse(decodedString) as ResultData;
-      // Basic validation
-      if (resultData.creatorProfile && resultData.partnerAnswers && resultData.questionsUsed) {
-        onViewResults(resultData);
-      } else {
-        throw new Error("Invalid data structure in result code.");
-      }
-    } catch (error) {
-      console.error("Failed to parse result code:", error);
-      setResultError('Invalid or corrupted result code. Please check and try again.');
-    }
-  };
-  
   const officialTemplates = quizTemplates.filter(t => t.isPublic && t.isOfficial);
   const communityTemplates = quizTemplates.filter(t => t.isPublic && !t.isOfficial);
 
@@ -80,7 +64,7 @@ const HomeView: React.FC<HomeViewProps> = ({ quizTemplates, onStartCreator, onSt
         <Card className="text-center p-6 flex flex-col">
           <h2 className="text-2xl font-bold mb-2">2. Join a Quiz</h2>
           <p className="text-gray-500 mb-4 flex-grow">Got a code from your partner? Enter it here to start the quiz.</p>
-          <form onSubmit={handleJoin} className="flex flex-col gap-2">
+          <form onSubmit={(e) => handleCodeSubmit(e, invitationCode, setJoinError, onJoinQuiz, { empty: 'Please enter the code from your partner.', invalid: 'Invalid or corrupted invitation code. Please check and try again.' }, validateSessionData)} className="flex flex-col gap-2">
             <input
               type="text"
               placeholder="Enter Invitation Code"
@@ -97,7 +81,7 @@ const HomeView: React.FC<HomeViewProps> = ({ quizTemplates, onStartCreator, onSt
       <Card>
         <h2 className="text-2xl font-bold text-center mb-4">3. View Your Results</h2>
         <p className="text-gray-500 mb-6 text-center">After your partner finishes, they'll get a 'Result Code'. Enter it here to see your compatibility report!</p>
-        <form onSubmit={handleViewResultsSubmit} className="max-w-md mx-auto flex flex-col gap-2">
+        <form onSubmit={(e) => handleCodeSubmit(e, resultCode, setResultError, onViewResults, { empty: 'Please enter a result code.', invalid: 'Invalid or corrupted result code. Please check and try again.'}, validateResultData)} className="max-w-md mx-auto flex flex-col gap-2">
             <input
               type="text"
               placeholder="Enter Result Code"
