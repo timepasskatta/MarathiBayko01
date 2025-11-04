@@ -1,10 +1,12 @@
 
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Profile, Answers, Question, QuizTemplate, SessionData } from '../types';
 import { generateId } from '../utils/helpers';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import BackButton from '../components/BackButton';
 
 interface ShareAndPublishViewProps {
   creatorProfile: Profile | null;
@@ -12,9 +14,10 @@ interface ShareAndPublishViewProps {
   questionsUsed: Question[];
   onSessionCreated: (session: SessionData) => void;
   setQuizTemplates: React.Dispatch<React.SetStateAction<QuizTemplate[]>>;
+  onBack: () => void;
 }
 
-const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfile, creatorAnswers, questionsUsed, onSessionCreated, setQuizTemplates }) => {
+const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfile, creatorAnswers, questionsUsed, onSessionCreated, setQuizTemplates, onBack }) => {
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   
@@ -82,7 +85,8 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
   }
 
   return (
-    <Card className="text-center">
+    <Card className="text-center relative pt-12">
+      <BackButton onClick={onBack} />
       <h2 className="text-2xl font-bold mb-4">Your Room is Ready!</h2>
       <p className="text-gray-600 mb-6">
         Share this invitation code with your partner. They can enter it on the home page to join.

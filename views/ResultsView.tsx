@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Profile, Answers, Question } from '../types';
+import { Profile, Answers, Question, ResultData } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import CircularProgressBar from '../components/CircularProgressBar';
@@ -34,6 +34,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
   const [comparison, setComparison] = useState<ComparisonResult[]>([]);
   const [analysis, setAnalysis] = useState('');
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
+  const [resultCode, setResultCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const calculateResults = () => {
@@ -67,10 +69,27 @@ const ResultsView: React.FC<ResultsViewProps> = ({
       const finalScore = validQuestions.length > 0 ? (correctAnswers / validQuestions.length) * 100 : 0;
       setScore(finalScore);
       setComparison(detailedComparison);
+
+      // Generate the shareable result code
+      const resultData: ResultData = {
+          creatorProfile,
+          partnerProfile,
+          creatorAnswers,
+          partnerAnswers,
+          questionsUsed: validQuestions
+      };
+      try {
+        const encodedData = btoa(JSON.stringify(resultData));
+        setResultCode(encodedData);
+      } catch (error) {
+        console.error("Error encoding result data:", error);
+        setResultCode("Could not generate result code.");
+      }
+
     };
 
     calculateResults();
-  }, [creatorAnswers, partnerAnswers, questionsUsed]);
+  }, [creatorAnswers, partnerAnswers, questionsUsed, creatorProfile, partnerProfile]);
 
   useEffect(() => {
     if (score === null) {
@@ -81,13 +100,10 @@ const ResultsView: React.FC<ResultsViewProps> = ({
       const fetchAnalysis = async () => {
         setIsLoadingAnalysis(true);
         
-        // --- CRITICAL FIX: SAFETY CHECK FOR API KEY ---
-        // This prevents the app from crashing on deployed environments like Netlify
-        // where the environment variable might not be set.
         if (!process.env.API_KEY) {
             setAnalysis("AI analysis feature is not configured. The site administrator needs to set up an API Key.");
             setIsLoadingAnalysis(false);
-            return; // Stop execution to prevent a crash
+            return;
         }
         
         try {
@@ -134,6 +150,14 @@ Now, write a summary analysis. Start with a catchy headline. Then, have a sectio
         setAnalysis("No questions were answered, so we couldn't calculate a score. Try creating a new quiz!");
     }
   }, [comparison, score, creatorProfile, partnerProfile]);
+
+  const handleCopy = () => {
+    if (resultCode) {
+        navigator.clipboard.writeText(resultCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   if (score === null) {
     return (
@@ -190,6 +214,25 @@ Now, write a summary analysis. Start with a catchy headline. Then, have a sectio
             </div>
           )) : <p className="text-center text-gray-500">No questions to display.</p>}
         </div>
+      </Card>
+      
+      <Card>
+        <h3 className="text-xl font-bold text-center mb-4">🎁 Share These Results! 🎁</h3>
+        <p className="text-gray-600 mb-6 text-center">
+            Copy this code and send it back to <strong>{creatorProfile.name}</strong>.
+            They can enter it on the home page to see your amazing results!
+        </p>
+        <div className="bg-rose-50 border-2 border-dashed border-rose-200 rounded-lg p-4 mb-6">
+            <p className="text-gray-500 text-sm mb-2">Your Result Code</p>
+            <textarea
+                readOnly
+                className="w-full h-24 p-2 font-mono text-xs text-gray-600 bg-transparent border-none focus:ring-0 resize-none text-center"
+                value={resultCode || 'Generating...'}
+            />
+        </div>
+        <Button onClick={handleCopy} disabled={!resultCode}>
+            {copied ? 'Copied!' : 'Copy Result Code'}
+        </Button>
       </Card>
 
       <Button onClick={onRestart}>Create a New Quiz</Button>

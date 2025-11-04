@@ -1,6 +1,7 @@
 import React from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import BackButton from '../components/BackButton';
 
 interface QuestionChoiceViewProps {
   onSelectStandard: () => void;
@@ -10,10 +11,8 @@ interface QuestionChoiceViewProps {
 
 const QuestionChoiceView: React.FC<QuestionChoiceViewProps> = ({ onSelectStandard, onSelectCustom, onBack }) => {
   return (
-    <Card className="text-center">
-      <button onClick={onBack} className="text-sm text-pink-600 hover:underline mb-4 absolute top-6 left-6">
-        &larr; Back
-      </button>
+    <Card className="text-center relative pt-12">
+      <BackButton onClick={onBack} />
       <h2 className="text-2xl font-bold mb-6">Choose Your Questions</h2>
       <div className="space-y-4">
         <div className="border border-rose-200 p-4 rounded-lg">

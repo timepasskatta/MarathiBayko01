@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { initialQuestions } from './data/questions';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { Question, Profile, Answers, QuizTemplate, SessionData, PageContent, View, AdSenseConfig } from './types';
+import { Question, Profile, Answers, QuizTemplate, SessionData, PageContent, View, AdSenseConfig, ResultData } from './types';
 
 // Views
 import HomeView from './views/HomeView';
@@ -158,6 +158,15 @@ const App: React.FC = () => {
   const handleNavigateToPage = (page: View) => {
     setView(page);
   };
+  
+  const handleViewResults = (data: ResultData) => {
+    setCreatorProfile(data.creatorProfile);
+    setPartnerProfile(data.partnerProfile);
+    setCreatorAnswers(data.creatorAnswers);
+    setPartnerAnswers(data.partnerAnswers);
+    setQuestionsToUse(data.questionsUsed);
+    setView('results');
+  };
 
   const renderView = () => {
     switch (view) {
@@ -171,7 +180,7 @@ const App: React.FC = () => {
         return <QuestionnaireView questions={questionsToUse} onFinish={handleFinishCreatorQuestionnaire} onBack={() => setView(questionsToUse.some(q=>q.category === 'Custom') ? 'customQuestionEditor' : 'questionChoice')} />;
       case 'share':
         if (!creatorProfile || !creatorAnswers) return <p>Loading...</p>;
-        return <ShareAndPublishView creatorProfile={creatorProfile} creatorAnswers={creatorAnswers} questionsUsed={questionsToUse} onSessionCreated={handleSessionCreated} setQuizTemplates={setQuizTemplates} />;
+        return <ShareAndPublishView creatorProfile={creatorProfile} creatorAnswers={creatorAnswers} questionsUsed={questionsToUse} onSessionCreated={handleSessionCreated} setQuizTemplates={setQuizTemplates} onBack={() => setView('creatorQuestionnaire')} />;
       case 'partnerProfileSetup':
         return <ProfileSetupView userType="Partner" onSave={handleSavePartnerProfile} onBack={resetState} />;
       case 'partnerQuestionnaire':
@@ -193,7 +202,7 @@ const App: React.FC = () => {
         return <StaticPageView title="Terms & Conditions" content={pageContent.termsAndConditions} onBack={resetState} />
       case 'home':
       default:
-        return <HomeView quizTemplates={quizTemplates} onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onJoinQuiz={handleJoinQuiz} onAdminLogin={() => setView('adminLogin')} adsEnabled={adsEnabled} adSenseConfig={adSenseConfig} />;
+        return <HomeView quizTemplates={quizTemplates} onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onJoinQuiz={handleJoinQuiz} onAdminLogin={() => setView('adminLogin')} adsEnabled={adsEnabled} adSenseConfig={adSenseConfig} onViewResults={handleViewResults} />;
     }
   };
 

@@ -3,6 +3,7 @@ import { Question, Answers } from '../types';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import ProgressBar from '../components/ProgressBar';
+import BackButton from '../components/BackButton';
 
 interface QuestionnaireViewProps {
   questions: Question[];
@@ -39,12 +40,8 @@ const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({ questions, onFini
   const answeredCount = Object.keys(answers).filter(key => answers[parseInt(key)]).length;
 
   return (
-    <Card>
-      {onBack && (
-        <button onClick={onBack} className="text-sm text-pink-600 hover:underline mb-4">
-          &larr; Back
-        </button>
-      )}
+    <Card className="relative pt-12">
+      {onBack && <BackButton onClick={onBack} />}
       <div className="mb-4">
         <p className="text-center text-sm text-gray-500 mb-2">
           Question {currentQuestionIndex + 1} of {questions.length}

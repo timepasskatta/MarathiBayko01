@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Profile } from '../types';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import BackButton from '../components/BackButton';
 
 interface ProfileSetupViewProps {
   userType: 'Creator' | 'Partner';
@@ -35,7 +36,8 @@ const ProfileSetupView: React.FC<ProfileSetupViewProps> = ({ userType, onSave, o
   };
 
   return (
-    <Card>
+    <Card className="relative pt-12">
+      {onBack && <BackButton onClick={onBack} />}
       <h2 className="text-2xl font-bold text-center mb-6">Create Your Profile ({userType})</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -121,8 +123,7 @@ const ProfileSetupView: React.FC<ProfileSetupViewProps> = ({ userType, onSave, o
           />
         </div>
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-        <div className="pt-4 flex flex-col-reverse sm:flex-row gap-2">
-          {onBack && <Button type="button" variant="secondary" onClick={onBack}>Back</Button>}
+        <div className="pt-4">
           <Button type="submit">Save & Continue</Button>
         </div>
       </form>

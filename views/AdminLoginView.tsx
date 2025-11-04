@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import BackButton from '../components/BackButton';
 
 interface AdminLoginViewProps {
   onLoginSuccess: () => void;
@@ -26,7 +27,8 @@ const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onLoginSuccess, onBack 
   };
 
   return (
-    <Card>
+    <Card className="relative pt-12">
+      <BackButton onClick={onBack} />
       <h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2>
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
@@ -52,7 +54,6 @@ const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onLoginSuccess, onBack 
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
         <div className="pt-4 space-y-2">
             <Button type="submit">Login</Button>
-            <Button variant="secondary" onClick={onBack}>Back to Home</Button>
         </div>
       </form>
     </Card>

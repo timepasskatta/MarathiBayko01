@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Question } from '../types';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import BackButton from '../components/BackButton';
 
 interface CustomQuestionEditorViewProps {
   onFinish: (questions: Question[]) => void;
@@ -55,10 +56,8 @@ const CustomQuestionEditorView: React.FC<CustomQuestionEditorViewProps> = ({ onF
   };
 
   return (
-    <Card>
-      <button onClick={onBack} className="text-sm text-pink-600 hover:underline mb-4 absolute top-6 left-6">
-          &larr; Back
-      </button>
+    <Card className="relative pt-12">
+      <BackButton onClick={onBack} />
       <h2 className="text-2xl font-bold text-center mb-4">Create Your Custom Quiz</h2>
       <p className="text-center text-gray-500 mb-6">Add at least 3 questions for a good result.</p>
       

@@ -36,6 +36,14 @@ export interface SessionData {
   questionsUsed: Question[];
 }
 
+export interface ResultData {
+  creatorProfile: Profile;
+  partnerProfile: Profile;
+  creatorAnswers: Answers;
+  partnerAnswers: Answers;
+  questionsUsed: Question[];
+}
+
 export type View = 
   | 'home' 
   | 'creatorProfileSetup' 
