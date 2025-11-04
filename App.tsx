@@ -1,6 +1,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { initialQuestions } from './data/questions';
+import { officialTemplates } from './data/officialTemplates'; // Import new templates
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Question, Profile, Answers, QuizTemplate, SessionData, PageContent, View, AdSenseConfig, ResultData } from './types';
 
@@ -111,22 +112,42 @@ const App: React.FC = () => {
   const [currentSessionData, setCurrentSessionData] = useState<SessionData | null>(null);
   
   useEffect(() => {
-    // On first load, check if the standard quiz template exists. If not, create it.
-    const standardQuizExists = quizTemplates.some(t => t.id === 'standard-quiz-001');
-    if (!standardQuizExists) {
-      const standardTemplate: QuizTemplate = {
-        id: 'standard-quiz-001',
-        title: 'Standard Compatibility Quiz',
-        description: 'The official set of 25 questions to test your bond.',
-        creatorName: 'Marathi Bayko Team',
-        questions: initialQuestions,
-        isPublic: true,
-        isOfficial: true,
-        createdAt: new Date().toISOString(),
-        status: 'approved',
-      };
-      setQuizTemplates(prev => [...prev, standardTemplate]);
-    }
+    // On first load, check and add any missing official templates.
+    setQuizTemplates(prevTemplates => {
+      const existingTemplateIds = new Set(prevTemplates.map(t => t.id));
+      const templatesToAdd: QuizTemplate[] = [];
+
+      // Combine standard quiz and new official templates into one list
+      const allOfficialTemplates = [
+        {
+          id: 'standard-quiz-001',
+          title: 'Standard Compatibility Quiz',
+          description: 'The official set of 25 questions to test your bond.',
+          creatorName: 'Marathi Bayko Team',
+          questions: initialQuestions,
+          isPublic: true,
+          isOfficial: true,
+          createdAt: new Date().toISOString(),
+          status: 'approved' as const,
+        },
+        ...officialTemplates
+      ];
+
+      // Check for and add any missing official templates
+      allOfficialTemplates.forEach(newTemplate => {
+        if (!existingTemplateIds.has(newTemplate.id)) {
+          templatesToAdd.push(newTemplate);
+        }
+      });
+
+      // If there are new templates to add, update the state
+      if (templatesToAdd.length > 0) {
+        return [...prevTemplates, ...templatesToAdd];
+      }
+
+      // Otherwise, return the previous state to avoid unnecessary re-renders
+      return prevTemplates;
+    });
   }, []); // Runs only once on app startup
 
 
