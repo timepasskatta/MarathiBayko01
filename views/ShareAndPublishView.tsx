@@ -34,14 +34,18 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
         questionsUsed,
       };
 
-      try {
-        const encodedData = encodeObjectToBase64(sessionData);
-        setInvitationCode(encodedData);
-        onSessionCreated(sessionData);
-      } catch (error) {
-          console.error("Error encoding session data:", error);
-          setInvitationCode("Error: Could not generate code.");
-      }
+      const generateCode = async () => {
+        try {
+          const encodedData = await encodeObjectToBase64(sessionData);
+          setInvitationCode(encodedData);
+          onSessionCreated(sessionData);
+        } catch (error) {
+            console.error("Error encoding session data:", error);
+            setInvitationCode("Error: Could not generate code.");
+        }
+      };
+      
+      generateCode();
     }
   }, [creatorProfile, creatorAnswers, questionsUsed, onSessionCreated]);
 

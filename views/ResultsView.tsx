@@ -39,7 +39,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const calculateResults = () => {
+    const calculateResults = async () => {
       if (!Array.isArray(questionsUsed) || questionsUsed.length === 0) {
         setScore(0);
         setComparison([]);
@@ -80,7 +80,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
           questionsUsed: validQuestions
       };
       try {
-        const encodedData = encodeObjectToBase64(resultData);
+        const encodedData = await encodeObjectToBase64(resultData);
         setResultCode(encodedData);
       } catch (error) {
         console.error("Error encoding result data:", error);

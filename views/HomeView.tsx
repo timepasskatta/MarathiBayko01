@@ -22,7 +22,7 @@ const HomeView: React.FC<HomeViewProps> = ({ quizTemplates, onStartCreator, onSt
   const [resultCode, setResultCode] = useState('');
   const [resultError, setResultError] = useState('');
 
-  const handleCodeSubmit = <TData,>(
+  const handleCodeSubmit = async <TData,>(
     e: React.FormEvent,
     code: string,
     setError: React.Dispatch<React.SetStateAction<string>>,
@@ -36,7 +36,7 @@ const HomeView: React.FC<HomeViewProps> = ({ quizTemplates, onStartCreator, onSt
       return;
     }
     try {
-      const decodedData = decodeBase64ToObject<TData>(code);
+      const decodedData = await decodeBase64ToObject<TData>(code);
       if (validationFn(decodedData)) {
         onSuccess(decodedData);
       } else {
