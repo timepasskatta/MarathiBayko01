@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QuizTemplate, SessionData } from '../types';
+import { QuizTemplate, SessionData, AdSenseConfig } from '../types';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import AdBanner from '../components/AdBanner';
@@ -11,9 +11,10 @@ interface HomeViewProps {
   onJoinQuiz: (session: SessionData) => void;
   onAdminLogin: () => void;
   adsEnabled: boolean;
+  adSenseConfig: AdSenseConfig;
 }
 
-const HomeView: React.FC<HomeViewProps> = ({ quizTemplates, onStartCreator, onStartFromTemplate, onJoinQuiz, onAdminLogin, adsEnabled }) => {
+const HomeView: React.FC<HomeViewProps> = ({ quizTemplates, onStartCreator, onStartFromTemplate, onJoinQuiz, onAdminLogin, adsEnabled, adSenseConfig }) => {
   const [invitationCode, setInvitationCode] = useState('');
   const [joinError, setJoinError] = useState('');
 
@@ -66,7 +67,7 @@ const HomeView: React.FC<HomeViewProps> = ({ quizTemplates, onStartCreator, onSt
         {joinError && <p className="text-red-500 text-sm mt-2 text-center">{joinError}</p>}
       </Card>
 
-      {adsEnabled && <AdBanner />}
+      {adsEnabled && <AdBanner clientId={adSenseConfig.clientId} adSlotId={adSenseConfig.adSlotId} />}
       
       {hasPublicQuizzes ? (
         <>

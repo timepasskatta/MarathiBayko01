@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface ProgressBarProps {
@@ -10,7 +9,14 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ current, total }) => {
   const percentage = total > 0 ? (current / total) * 100 : 0;
 
   return (
-    <div className="w-full bg-rose-200 rounded-full h-2.5">
+    <div
+      className="w-full bg-rose-200 rounded-full h-2.5"
+      role="progressbar"
+      aria-label="Quiz progress"
+      aria-valuenow={current}
+      aria-valuemin={0}
+      aria-valuemax={total}
+    >
       <div
         className="bg-pink-500 h-2.5 rounded-full transition-all duration-500 ease-out"
         style={{ width: `${percentage}%` }}

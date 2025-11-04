@@ -8,16 +8,17 @@ interface CustomQuestionEditorViewProps {
   onBack: () => void;
 }
 
-const emptyQuestion: Question = {
-  id: Date.now(),
+const createEmptyQuestion = (): Question => ({
+  id: Date.now() + Math.floor(Math.random() * 1000), // More unique than Date.now() alone
   text: '',
   category: 'Custom',
   options: ['', '', '', ''],
   active: true,
-};
+});
+
 
 const CustomQuestionEditorView: React.FC<CustomQuestionEditorViewProps> = ({ onFinish, onBack }) => {
-  const [questions, setQuestions] = useState<Question[]>([{...emptyQuestion}]);
+  const [questions, setQuestions] = useState<Question[]>([createEmptyQuestion()]);
 
   const updateQuestion = (index: number, field: keyof Question, value: any) => {
     const newQuestions = [...questions];
@@ -32,7 +33,7 @@ const CustomQuestionEditorView: React.FC<CustomQuestionEditorViewProps> = ({ onF
   };
 
   const addQuestion = () => {
-    setQuestions([...questions, { ...emptyQuestion, id: Date.now() }]);
+    setQuestions([...questions, createEmptyQuestion()]);
   };
 
   const removeQuestion = (index: number) => {

@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Marathi Bayko – Real Relationship Partner Checker</title>
     
+    <!-- Cache Control Headers to prevent browser caching -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -13,10 +18,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     
-    <!-- AdSense Script (placeholder - replace with your client ID) -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_CLIENT_ID"
-     crossorigin="anonymous"></script>
-
     <!-- Style overrides -->
     <style>
         body {
@@ -37,6 +38,7 @@
 </head>
 <body class="bg-rose-50">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <!-- Added a version query to bust cache on new deployments -->
+    <script type="module" src="/index.tsx?v=2024072201"></script>
 </body>
 </html>

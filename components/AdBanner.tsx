@@ -1,22 +1,38 @@
 import React, { useEffect } from 'react';
 
-const AdBanner: React.FC = () => {
+interface AdBannerProps {
+    clientId: string;
+    adSlotId: string;
+}
+
+const AdBanner: React.FC<AdBannerProps> = ({ clientId, adSlotId }) => {
     useEffect(() => {
-        try {
-            // This is the global Adsense object.
-            // The `|| []` is a safety measure.
-            ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-        } catch (e) {
-            console.error("AdSense error:", e);
+        // Only push to adsbygoogle if the IDs are valid to avoid errors.
+        if (clientId && !clientId.includes('YOUR_CLIENT_ID') && adSlotId && !adSlotId.includes('YOUR_AD_SLOT_ID')) {
+            try {
+                ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+            } catch (e) {
+                console.error("AdSense error:", e);
+            }
         }
-    }, []);
+    }, [clientId, adSlotId]);
+
+    // Show a placeholder if the AdSense IDs are not configured
+    if (!clientId || clientId.includes('YOUR_CLIENT_ID') || !adSlotId || adSlotId.includes('YOUR_AD_SLOT_ID')) {
+        return (
+            <div className="my-4 p-4 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg text-center">
+                <p><strong>Ad Banner Placeholder</strong></p>
+                <p className="text-sm">Please configure your AdSense Client & Slot ID in the Admin Panel.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="my-4 text-center">
             <ins className="adsbygoogle"
                 style={{ display: 'block' }}
-                data-ad-client="ca-pub-YOUR_CLIENT_ID" // IMPORTANT: Replace with your client ID
-                data-ad-slot="YOUR_AD_SLOT_ID"         // IMPORTANT: Replace with your ad slot ID
+                data-ad-client={clientId}
+                data-ad-slot={adSlotId}
                 data-ad-format="auto"
                 data-full-width-responsive="true"></ins>
         </div>

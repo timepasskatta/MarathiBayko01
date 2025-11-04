@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QuizTemplate, PageContent, Question } from '../types';
+import { QuizTemplate, PageContent, Question, AdSenseConfig } from '../types';
 import { generateId } from '../utils/helpers';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -11,14 +11,23 @@ interface AdminDashboardViewProps {
   setPageContent: React.Dispatch<React.SetStateAction<PageContent>>;
   adsEnabled: boolean;
   setAdsEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  adSenseConfig: AdSenseConfig;
+  setAdSenseConfig: React.Dispatch<React.SetStateAction<AdSenseConfig>>;
   onLogout: () => void;
 }
 
 const emptyQuestion: Question = { id: 1, text: '', category: 'Official', options: ['', '', '', ''], active: true };
 
-const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ quizTemplates, setQuizTemplates, pageContent, setPageContent, adsEnabled, setAdsEnabled, onLogout }) => {
+const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ 
+  quizTemplates, setQuizTemplates, 
+  pageContent, setPageContent, 
+  adsEnabled, setAdsEnabled, 
+  adSenseConfig, setAdSenseConfig,
+  onLogout 
+}) => {
   
   const [localPageContent, setLocalPageContent] = useState(pageContent);
+  const [localAdSenseConfig, setLocalAdSenseConfig] = useState(adSenseConfig);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newQuiz, setNewQuiz] = useState({ title: '', description: '', questions: [{...emptyQuestion}] });
 
@@ -43,6 +52,15 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ quizTemplates, 
   const savePageContent = () => {
       setPageContent(localPageContent);
       alert('Page content saved!');
+  };
+
+  const handleAdSenseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalAdSenseConfig({ ...localAdSenseConfig, [e.target.name]: e.target.value });
+  };
+
+  const saveAdSenseConfig = () => {
+      setAdSenseConfig(localAdSenseConfig);
+      alert('AdSense settings saved!');
   };
 
   const handleNewQuizChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -94,12 +112,29 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ quizTemplates, 
       {/* Site Settings */}
       <Card>
           <h3 className="text-xl font-bold mb-4">Site Settings</h3>
-          <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-              <p>Display Ads</p>
-              <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked={adsEnabled} onChange={() => setAdsEnabled(p => !p)} className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-pink-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
-              </label>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                <p>Display Ads</p>
+                <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={adsEnabled} onChange={() => setAdsEnabled(p => !p)} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-pink-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+                </label>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold text-lg mt-4">AdSense Settings</h4>
+              <div className="p-2 bg-gray-50 rounded-lg mt-2 space-y-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Client ID (ca-pub-xxxxxxxx)</label>
+                    <input type="text" name="clientId" value={localAdSenseConfig.clientId} onChange={handleAdSenseChange} className="w-full p-2 border rounded mt-1" />
+                  </div>
+                   <div>
+                    <label className="block text-sm font-medium text-gray-700">Ad Slot ID</label>
+                    <input type="text" name="adSlotId" value={localAdSenseConfig.adSlotId} onChange={handleAdSenseChange} className="w-full p-2 border rounded mt-1" />
+                  </div>
+                  <Button onClick={saveAdSenseConfig} variant="secondary" className="w-auto">Save Ad Settings</Button>
+              </div>
+            </div>
           </div>
       </Card>
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Button from '../components/Button';
 import Card from '../components/Card';
@@ -15,7 +14,11 @@ const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onLoginSuccess, onBack 
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'marathibayko@2025') {
+    // Use environment variables for credentials with a fallback for local dev
+    const adminUser = process.env.ADMIN_USERNAME || 'admin';
+    const adminPass = process.env.ADMIN_PASSWORD || 'marathibayko@2025';
+
+    if (username === adminUser && password === adminPass) {
       onLoginSuccess();
     } else {
       setError('Invalid credentials.');
@@ -27,18 +30,20 @@ const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onLoginSuccess, onBack 
       <h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2>
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Username</label>
+          <label htmlFor="username-input" className="block text-sm font-medium text-gray-700">Username</label>
           <input
             type="text"
+            id="username-input"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Password</label>
+          <label htmlFor="password-input" className="block text-sm font-medium text-gray-700">Password</label>
           <input
             type="password"
+            id="password-input"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500"

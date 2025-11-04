@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { initialQuestions } from './data/questions';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { Question, Profile, Answers, QuizTemplate, SessionData, PageContent, View } from './types';
+import { Question, Profile, Answers, QuizTemplate, SessionData, PageContent, View, AdSenseConfig } from './types';
 
 // Views
 import HomeView from './views/HomeView';
@@ -22,12 +22,18 @@ const initialPageContent: PageContent = {
   termsAndConditions: 'By using this site, you agree to... Edit this content in the admin panel.',
 };
 
+const initialAdSenseConfig: AdSenseConfig = {
+    clientId: 'ca-pub-YOUR_CLIENT_ID',
+    adSlotId: 'YOUR_AD_SLOT_ID',
+};
+
 const App: React.FC = () => {
   const [view, setView] = useState<View>('home');
   
   const [quizTemplates, setQuizTemplates] = useLocalStorage<QuizTemplate[]>('quiz-templates', []);
   const [pageContent, setPageContent] = useLocalStorage<PageContent>('site-pages', initialPageContent);
   const [adsEnabled, setAdsEnabled] = useLocalStorage<boolean>('ads-enabled', true);
+  const [adSenseConfig, setAdSenseConfig] = useLocalStorage<AdSenseConfig>('adsense-config', initialAdSenseConfig);
 
   const [questionsToUse, setQuestionsToUse] = useState<Question[]>([]);
   
@@ -38,6 +44,22 @@ const App: React.FC = () => {
   const [partnerAnswers, setPartnerAnswers] = useState<Answers>({});
 
   const [currentSessionData, setCurrentSessionData] = useState<SessionData | null>(null);
+  
+  useEffect(() => {
+    // Dynamically inject the AdSense script if it's enabled and a valid client ID is provided
+    if (adsEnabled && adSenseConfig.clientId && !adSenseConfig.clientId.includes('YOUR_CLIENT_ID')) {
+      const scriptId = 'adsense-script';
+      if (document.getElementById(scriptId)) return; // Avoid re-injecting
+
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.async = true;
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adSenseConfig.clientId}`;
+      script.crossOrigin = 'anonymous';
+      document.head.appendChild(script);
+    }
+  }, [adsEnabled, adSenseConfig.clientId]);
+
 
   const resetState = useCallback(() => {
     setView('home');
@@ -48,6 +70,33 @@ const App: React.FC = () => {
     setPartnerAnswers({});
     setCurrentSessionData(null);
   }, []);
+
+  useEffect(() => {
+    // This effect acts as a guard to prevent the app from being in an invalid state.
+    // If a user refreshes on a page that requires previous steps, it safely redirects them home.
+    const requiresCreatorProfile: View[] = ['questionChoice', 'customQuestionEditor', 'creatorQuestionnaire', 'share'];
+    const requiresPartnerProfile: View[] = ['partnerQuestionnaire', 'results'];
+    
+    if (requiresCreatorProfile.includes(view) && !creatorProfile) {
+      console.warn(`State invalid for view "${view}". Creator profile missing. Resetting.`);
+      resetState();
+      return;
+    }
+    
+    if (requiresPartnerProfile.includes(view)) {
+        if (!creatorProfile || !creatorAnswers) {
+            console.warn(`State invalid for view "${view}". Creator data missing. Resetting.`);
+            resetState();
+            return;
+        }
+        if (view === 'results' && (!partnerProfile || !partnerAnswers)) {
+            console.warn(`State invalid for view "${view}". Partner data missing. Resetting.`);
+            resetState();
+            return;
+        }
+    }
+  }, [view, creatorProfile, partnerProfile, creatorAnswers, partnerAnswers, resetState]);
+
 
   const handleStartCreator = () => setView('creatorProfileSetup');
   
@@ -121,7 +170,7 @@ const App: React.FC = () => {
       case 'creatorQuestionnaire':
         return <QuestionnaireView questions={questionsToUse} onFinish={handleFinishCreatorQuestionnaire} onBack={() => setView(questionsToUse.some(q=>q.category === 'Custom') ? 'customQuestionEditor' : 'questionChoice')} />;
       case 'share':
-        if (!creatorProfile || !creatorAnswers) return <p>Error: Missing data for sharing.</p>;
+        if (!creatorProfile || !creatorAnswers) return <p>Loading...</p>;
         return <ShareAndPublishView creatorProfile={creatorProfile} creatorAnswers={creatorAnswers} questionsUsed={questionsToUse} onSessionCreated={handleSessionCreated} setQuizTemplates={setQuizTemplates} />;
       case 'partnerProfileSetup':
         return <ProfileSetupView userType="Partner" onSave={handleSavePartnerProfile} onBack={resetState} />;
@@ -133,7 +182,7 @@ const App: React.FC = () => {
       case 'adminLogin':
         return <AdminLoginView onLoginSuccess={() => setView('adminDashboard')} onBack={resetState} />
       case 'adminDashboard':
-        return <AdminDashboardView quizTemplates={quizTemplates} setQuizTemplates={setQuizTemplates} onLogout={resetState} pageContent={pageContent} setPageContent={setPageContent} adsEnabled={adsEnabled} setAdsEnabled={setAdsEnabled} />;
+        return <AdminDashboardView quizTemplates={quizTemplates} setQuizTemplates={setQuizTemplates} onLogout={resetState} pageContent={pageContent} setPageContent={setPageContent} adsEnabled={adsEnabled} setAdsEnabled={setAdsEnabled} adSenseConfig={adSenseConfig} setAdSenseConfig={setAdSenseConfig} />;
       case 'aboutUs':
         return <StaticPageView title="About Us" content={pageContent.aboutUs} onBack={resetState} />
       case 'contactUs':
@@ -144,7 +193,7 @@ const App: React.FC = () => {
         return <StaticPageView title="Terms & Conditions" content={pageContent.termsAndConditions} onBack={resetState} />
       case 'home':
       default:
-        return <HomeView quizTemplates={quizTemplates} onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onJoinQuiz={handleJoinQuiz} onAdminLogin={() => setView('adminLogin')} adsEnabled={adsEnabled} />;
+        return <HomeView quizTemplates={quizTemplates} onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onJoinQuiz={handleJoinQuiz} onAdminLogin={() => setView('adminLogin')} adsEnabled={adsEnabled} adSenseConfig={adSenseConfig} />;
     }
   };
 

@@ -59,3 +59,8 @@ export interface PageContent {
     privacyPolicy: string;
     termsAndConditions: string;
 }
+
+export interface AdSenseConfig {
+  clientId: string;
+  adSlotId: string;
+}

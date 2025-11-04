@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface CircularProgressBarProps {
@@ -18,7 +17,14 @@ const CircularProgressBar: React.FC<CircularProgressBarProps> = ({
   const offset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="relative inline-flex items-center justify-center">
+    <div
+      className="relative inline-flex items-center justify-center"
+      role="progressbar"
+      aria-label="Compatibility score"
+      aria-valuenow={Math.round(progress)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
       <svg width={size} height={size} className="transform -rotate-90">
         <circle
           cx={center}
@@ -43,7 +49,7 @@ const CircularProgressBar: React.FC<CircularProgressBarProps> = ({
           style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
         />
       </svg>
-      <span className="absolute text-3xl font-bold text-pink-600">{`${Math.round(progress)}%`}</span>
+      <span className="absolute text-3xl font-bold text-pink-600" aria-hidden="true">{`${Math.round(progress)}%`}</span>
     </div>
   );
 };
