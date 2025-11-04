@@ -44,9 +44,6 @@ const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({ questions, onFini
     <Card className="relative pt-12">
       {onBack && <BackButton onClick={onBack} />}
       <div className="mb-4">
-        <p className="text-center text-sm font-semibold text-pink-600 mb-1">
-          {isCreator ? "You're the Partner!" : "You're the Creator!"}
-        </p>
         <p className="text-center text-sm text-gray-500 mb-2">
           {isCreator ? "Guess your partner's answers to these questions." : "Answer these questions about yourself. Your partner will try to guess your answers."}
         </p>
@@ -86,16 +83,16 @@ const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({ questions, onFini
         ))}
       </div>
       
-      <div className="mt-8 flex justify-between items-center space-x-4">
-        <Button onClick={handlePrev} disabled={currentQuestionIndex === 0} variant="secondary" className="w-1/3 disabled:opacity-50">
+      <div className="mt-8 flex justify-between items-center gap-4">
+        <Button onClick={handlePrev} disabled={currentQuestionIndex === 0} variant="secondary" className="flex-1 disabled:opacity-50">
           Previous
         </Button>
         {currentQuestionIndex < questions.length - 1 ? (
-          <Button onClick={handleNext} disabled={!answers[currentQuestion.id]} className="w-2/3 disabled:opacity-50">
+          <Button onClick={handleNext} disabled={!answers[currentQuestion.id]} className="flex-1 disabled:opacity-50">
             Next
           </Button>
         ) : (
-          <Button onClick={handleFinish} disabled={answeredCount < questions.length} className="w-2/3 disabled:opacity-50">
+          <Button onClick={handleFinish} disabled={answeredCount < questions.length} className="flex-1 disabled:opacity-50">
             Finish & Save ({answeredCount}/{questions.length})
           </Button>
         )}

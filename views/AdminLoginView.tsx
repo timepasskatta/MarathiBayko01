@@ -17,7 +17,7 @@ const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onLoginSuccess, onBack 
     e.preventDefault();
     // Use environment variables for credentials with a fallback for local dev
     const adminUser = process.env.ADMIN_USERNAME || 'admin';
-    const adminPass = process.env.ADMIN_PASSWORD || 'marathibayko@2025';
+    const adminPass = process.env.ADMIN_PASSWORD || 'Vaibhavvaibhav@3601';
 
     if (username === adminUser && password === adminPass) {
       onLoginSuccess();

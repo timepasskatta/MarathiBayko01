@@ -28,6 +28,7 @@ export interface QuizTemplate {
   isPublic: boolean;
   isOfficial: boolean;
   createdAt: string;
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 export interface SessionData {

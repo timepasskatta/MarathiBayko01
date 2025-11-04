@@ -52,18 +52,20 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
           return;
       }
       if(creatorProfile) {
+        // Fix: Added 'status' property and corrected 'isPublic' to align with the review process.
         const newTemplate: QuizTemplate = {
             id: generateId(),
             title,
             description,
             creatorName: creatorProfile.name,
             questions: questionsUsed,
-            isPublic: true,
+            isPublic: false, // Must be approved by admin first
             isOfficial: false,
             createdAt: new Date().toISOString(),
+            status: 'pending', // Set status to pending for admin review
         };
         setQuizTemplates(prev => [...prev, newTemplate]);
-        alert("Your quiz has been published to the public feed!");
+        alert("Your quiz has been submitted for review by an admin!");
       }
   }
 

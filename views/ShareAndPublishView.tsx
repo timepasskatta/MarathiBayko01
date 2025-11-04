@@ -20,7 +20,7 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [isPublished, setIsPublished] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   
   const sessionCreatedRef = useRef(false);
 
@@ -69,13 +69,14 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
             description,
             creatorName: creatorProfile.name,
             questions: questionsUsed,
-            isPublic: true,
+            isPublic: false, // Must be approved by admin first
             isOfficial: false,
             createdAt: new Date().toISOString(),
+            status: 'pending', // Set status to pending for admin review
         };
         setQuizTemplates(prev => [...prev, newTemplate]);
-        setIsPublished(true);
-        alert("Your quiz has been published to the public feed!");
+        setIsSubmitted(true);
+        alert("Your quiz has been submitted for review by an admin!");
       }
   }
 
@@ -109,7 +110,7 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
       <Card className="text-left">
           <h3 className="text-xl font-bold mb-4">📣 Optional: Publish Your Quiz?</h3>
           <p className="text-gray-500 mb-4 text-sm">
-              Want to let others play your quiz? Give it a title and description to add it to the public 'Community Quizzes' list on the home page.
+              Want to let others play your quiz? Give it a title and description to add it to the 'Community Quizzes' list after admin approval.
               <br/>
               <strong>Note:</strong> Your answers will be used as the 'correct' answers for the public.
           </p>
@@ -117,8 +118,8 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
           <div className="space-y-4">
               <input type="text" placeholder="Quiz Title (e.g., 'For Movie Lovers')" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 border rounded"/>
               <textarea placeholder="Short Description" value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full p-2 border rounded"></textarea>
-              <Button onClick={handlePublish} variant="secondary" disabled={!title || !description || isPublished}>
-                {isPublished ? 'Published to Community!' : 'Publish to Public Feed'}
+              <Button onClick={handlePublish} variant="secondary" disabled={!title || !description || isSubmitted}>
+                {isSubmitted ? 'Submitted for Review!' : 'Submit to Public Feed'}
               </Button>
           </div>
       </Card>
