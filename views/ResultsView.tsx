@@ -80,6 +80,16 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     if (comparison.length > 0) {
       const fetchAnalysis = async () => {
         setIsLoadingAnalysis(true);
+        
+        // --- CRITICAL FIX: SAFETY CHECK FOR API KEY ---
+        // This prevents the app from crashing on deployed environments like Netlify
+        // where the environment variable might not be set.
+        if (!process.env.API_KEY) {
+            setAnalysis("AI analysis feature is not configured. The site administrator needs to set up an API Key.");
+            setIsLoadingAnalysis(false);
+            return; // Stop execution to prevent a crash
+        }
+        
         try {
           const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
           const prompt = `You are a relationship compatibility expert. Based on the following quiz data, provide a fun, insightful, and positive compatibility analysis in Marathi English (Manglish). The quiz was created by ${creatorProfile.name} to see how well ${partnerProfile.name} knows them.
@@ -112,7 +122,7 @@ Now, write a summary analysis. Start with a catchy headline. Then, have a sectio
           setAnalysis(response.text);
         } catch (error) {
           console.error("Error fetching analysis:", error);
-          setAnalysis("Could not generate analysis at this time. But your score speaks for itself!");
+          setAnalysis("Could not generate analysis at this time. This might be due to an invalid API key or a network issue. Please contact the administrator.");
         } finally {
           setIsLoadingAnalysis(false);
         }
