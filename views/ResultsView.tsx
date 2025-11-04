@@ -59,7 +59,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
         });
       });
 
-      const finalScore = (correctAnswers / questionsUsed.length) * 100;
+      const finalScore = questionsUsed.length > 0 ? (correctAnswers / questionsUsed.length) * 100 : 0;
       setScore(finalScore);
       setComparison(detailedComparison);
     };
@@ -114,6 +114,9 @@ Now, write a summary analysis. Start with a catchy headline. Then, have a sectio
       };
 
       fetchAnalysis();
+    } else {
+        setIsLoadingAnalysis(false);
+        setAnalysis("No questions were answered, so we couldn't calculate a score. Try creating a new quiz!");
     }
   }, [comparison, score, creatorProfile, partnerProfile]);
 
@@ -144,7 +147,7 @@ Now, write a summary analysis. Start with a catchy headline. Then, have a sectio
       <Card>
         <h3 className="text-xl font-bold mb-4">Detailed Breakdown</h3>
         <div className="space-y-4">
-          {comparison.map(c => (
+          {comparison.length > 0 ? comparison.map(c => (
             <div key={c.question.id} className={`p-4 rounded-lg border-l-4 ${c.isMatch ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
               <p className="font-semibold text-gray-800">{c.question.text}</p>
               <div className="mt-2 text-sm">
@@ -160,7 +163,7 @@ Now, write a summary analysis. Start with a catchy headline. Then, have a sectio
                 </p>
               </div>
             </div>
-          ))}
+          )) : <p className="text-center text-gray-500">No questions to display.</p>}
         </div>
       </Card>
 
