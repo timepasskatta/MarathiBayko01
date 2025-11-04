@@ -38,6 +38,7 @@ const HomeView: React.FC<HomeViewProps> = ({ quizTemplates, onStartCreator, onSt
   
   const officialTemplates = quizTemplates.filter(t => t.isPublic && t.isOfficial);
   const communityTemplates = quizTemplates.filter(t => t.isPublic && !t.isOfficial);
+  const hasPublicQuizzes = officialTemplates.length > 0 || communityTemplates.length > 0;
 
   return (
     <div className="space-y-8">
@@ -67,44 +68,57 @@ const HomeView: React.FC<HomeViewProps> = ({ quizTemplates, onStartCreator, onSt
 
       {adsEnabled && <AdBanner />}
       
-      {officialTemplates.length > 0 && (
-          <div className="space-y-4">
-              <h2 className="text-xl font-bold text-center text-gray-700">🏆 Official Quizzes 🏆</h2>
-              {officialTemplates.map(template => (
-                  <Card key={template.id} className="hover:shadow-xl transition-shadow border-2 border-pink-200">
-                     <div className="flex justify-between items-start">
-                          <div>
-                              <h3 className="font-bold text-lg text-pink-600">{template.title}</h3>
-                              <p className="text-sm text-gray-500 mb-2">by {template.creatorName}</p>
-                              <p className="text-gray-600">{template.description}</p>
+      {hasPublicQuizzes ? (
+        <>
+          {officialTemplates.length > 0 && (
+              <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-center text-gray-700">🏆 Official Quizzes 🏆</h2>
+                  {officialTemplates.map(template => (
+                      <Card key={template.id} className="hover:shadow-xl transition-shadow border-2 border-pink-200">
+                         <div className="flex justify-between items-start">
+                              <div>
+                                  <h3 className="font-bold text-lg text-pink-600">{template.title}</h3>
+                                  <p className="text-sm text-gray-500 mb-2">by {template.creatorName}</p>
+                                  <p className="text-gray-600">{template.description}</p>
+                              </div>
+                              <Button onClick={() => onStartFromTemplate(template)} className="w-auto ml-4" variant="secondary">
+                                  Use Template
+                              </Button>
                           </div>
-                          <Button onClick={() => onStartFromTemplate(template)} className="w-auto ml-4" variant="secondary">
-                              Use Template
-                          </Button>
-                      </div>
-                  </Card>
-              ))}
-          </div>
-      )}
-
-      {communityTemplates.length > 0 && (
-          <div className="space-y-4">
-              <h2 className="text-xl font-bold text-center text-gray-700">Community Quizzes</h2>
-              {communityTemplates.map(template => (
-                  <Card key={template.id} className="hover:shadow-xl transition-shadow">
-                      <div className="flex justify-between items-start">
-                          <div>
-                              <h3 className="font-bold text-lg text-pink-600">{template.title}</h3>
-                              <p className="text-sm text-gray-500 mb-2">by {template.creatorName}</p>
-                              <p className="text-gray-600">{template.description}</p>
+                      </Card>
+                  ))}
+              </div>
+          )}
+          {communityTemplates.length > 0 && (
+              <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-center text-gray-700">Community Quizzes</h2>
+                  {communityTemplates.map(template => (
+                      <Card key={template.id} className="hover:shadow-xl transition-shadow">
+                          <div className="flex justify-between items-start">
+                              <div>
+                                  <h3 className="font-bold text-lg text-pink-600">{template.title}</h3>
+                                  <p className="text-sm text-gray-500 mb-2">by {template.creatorName}</p>
+                                  <p className="text-gray-600">{template.description}</p>
+                              </div>
+                              <Button onClick={() => onStartFromTemplate(template)} className="w-auto ml-4" variant="secondary">
+                                  Use Template
+                              </Button>
                           </div>
-                          <Button onClick={() => onStartFromTemplate(template)} className="w-auto ml-4" variant="secondary">
-                              Use Template
-                          </Button>
-                      </div>
-                  </Card>
-              ))}
-          </div>
+                      </Card>
+                  ))}
+              </div>
+          )}
+        </>
+      ) : (
+        <Card className="text-center border-2 border-dashed border-rose-200 bg-rose-50">
+            <h2 className="text-xl font-bold text-gray-700 mb-2">🔍 Public Quiz Feed</h2>
+            <p className="text-gray-500">
+                This is where "Official" and "Community" quizzes will appear once they are created.
+            </p>
+            <p className="text-gray-500 mt-2">
+                Go to the <strong className="text-pink-600">Admin Panel</strong> to create the first official quiz!
+            </p>
+        </Card>
       )}
 
       <div className="text-center pt-4">
