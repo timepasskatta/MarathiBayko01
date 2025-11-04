@@ -92,9 +92,9 @@ const App: React.FC = () => {
     setView('share');
   };
 
-  const handleSessionCreated = (session: SessionData) => {
+  const handleSessionCreated = useCallback((session: SessionData) => {
       setCurrentSessionData(session);
-  };
+  }, []);
 
   const handleSavePartnerProfile = (profile: Profile) => {
     setPartnerProfile(profile);

@@ -1,11 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { Profile, Answers, Question } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import CircularProgressBar from '../components/CircularProgressBar';
 import Confetti from '../components/Confetti';
-// Fix: Import GoogleGenAI according to guidelines
 import { GoogleGenAI } from '@google/genai';
 
 interface ResultsViewProps {
@@ -32,17 +30,24 @@ const ResultsView: React.FC<ResultsViewProps> = ({
   questionsUsed,
   onRestart,
 }) => {
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState<number | null>(null);
   const [comparison, setComparison] = useState<ComparisonResult[]>([]);
   const [analysis, setAnalysis] = useState('');
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
 
   useEffect(() => {
     const calculateResults = () => {
+      if (!Array.isArray(questionsUsed) || questionsUsed.length === 0) {
+        setScore(0);
+        setComparison([]);
+        return;
+      }
+
       let correctAnswers = 0;
       const detailedComparison: ComparisonResult[] = [];
+      const validQuestions = questionsUsed.filter(q => q && typeof q === 'object' && q.id);
 
-      questionsUsed.forEach(question => {
+      validQuestions.forEach(question => {
         const creatorAnswer = creatorAnswers[question.id];
         const partnerAnswer = partnerAnswers[question.id];
         const isMatch = creatorAnswer === partnerAnswer;
@@ -59,7 +64,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
         });
       });
 
-      const finalScore = questionsUsed.length > 0 ? (correctAnswers / questionsUsed.length) * 100 : 0;
+      const finalScore = validQuestions.length > 0 ? (correctAnswers / validQuestions.length) * 100 : 0;
       setScore(finalScore);
       setComparison(detailedComparison);
     };
@@ -68,13 +73,15 @@ const ResultsView: React.FC<ResultsViewProps> = ({
   }, [creatorAnswers, partnerAnswers, questionsUsed]);
 
   useEffect(() => {
+    if (score === null) {
+      return; // Wait for score calculation
+    }
+
     if (comparison.length > 0) {
       const fetchAnalysis = async () => {
         setIsLoadingAnalysis(true);
         try {
-          // Fix: Always use new GoogleGenAI({apiKey: process.env.API_KEY});
           const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
           const prompt = `You are a relationship compatibility expert. Based on the following quiz data, provide a fun, insightful, and positive compatibility analysis in Marathi English (Manglish). The quiz was created by ${creatorProfile.name} to see how well ${partnerProfile.name} knows them.
 
 Creator's Profile:
@@ -97,13 +104,11 @@ The total compatibility score is ${score.toFixed(0)}%.
 
 Now, write a summary analysis. Start with a catchy headline. Then, have a section for "What Matched Well" and "Where You Differ". Keep the tone light, encouraging, and celebratory. Use some Marathi words where appropriate, like 'Ekdam mast!', 'Aga bai!', 'Sundar jodi'. The analysis should be around 150-200 words. Focus on celebrating the connection and suggesting that differences are just opportunities to learn more about each other. Do not output JSON.`;
 
-          // Fix: Use ai.models.generateContent for text generation
           const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
           });
           
-          // Fix: Extract text from response using the .text property
           setAnalysis(response.text);
         } catch (error) {
           console.error("Error fetching analysis:", error);
@@ -119,6 +124,16 @@ Now, write a summary analysis. Start with a catchy headline. Then, have a sectio
         setAnalysis("No questions were answered, so we couldn't calculate a score. Try creating a new quiz!");
     }
   }, [comparison, score, creatorProfile, partnerProfile]);
+
+  if (score === null) {
+    return (
+      <Card>
+        <div className="text-center p-8">
+          <p className="text-lg text-gray-500 animate-pulse">Calculating your results...</p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
