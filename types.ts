@@ -1,3 +1,4 @@
+// FIX: Moved Question interface here to resolve a circular dependency.
 export interface Question {
   id: number;
   category: string;

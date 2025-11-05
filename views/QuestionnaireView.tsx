@@ -52,7 +52,7 @@ const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({ questions, onComp
 
   return (
     <div className="space-y-6">
-        <Card className="relative pt-24">
+        <Card className="relative pt-32">
             <BackButton onClick={onBack} />
         <div className="absolute top-6 left-1/2 -translate-x-1/2 w-4/5">
             {activeTemplate && (
