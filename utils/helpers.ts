@@ -1,4 +1,6 @@
-import { SessionData, ResultData } from "../types";
+
+// FIX: Added .ts extension to the import path for 'types' to resolve module loading errors.
+import { SessionData, ResultData } from "../types.ts";
 
 export const generateId = (length: number = 8): string => {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

@@ -20,7 +20,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/standard.jpg',
+    imageUrl: 'https://i.postimg.cc/3wcqnCZG/1000719284.jpg',
     analysisConfig: {
       range0_25: "Looks like there's a universe of things to discover about each other! Every mismatched answer is a doorway to a new conversation. Start exploring!",
       range26_50: "You've got a good mix of similarities and differences. This is what makes a relationship exciting! It's a great chance to learn and grow together.",
@@ -39,7 +39,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/gf-bf.jpg',
+    imageUrl: 'https://i.postimg.cc/FRrp4fsk/100071916.jpg',
     analysisConfig: defaultAnalysis,
   },
   {
@@ -52,7 +52,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/husband-wife.jpg',
+    imageUrl: 'https://i.postimg.cc/pXwBdcXw/100071916-1.jpg',
     analysisConfig: defaultAnalysis,
   },
   {
@@ -65,7 +65,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/friends.jpg',
+    imageUrl: 'https://i.postimg.cc/Z5fKc2v4/100071917.jpg',
     analysisConfig: defaultAnalysis,
   },
   {
@@ -78,7 +78,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/siblings.jpg',
+    imageUrl: 'https://i.postimg.cc/7Y8VHQ6y/100071918.jpg',
     analysisConfig: defaultAnalysis,
   },
   {
@@ -91,7 +91,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/crush.jpg',
+    imageUrl: 'https://i.postimg.cc/2y8ChxjN/100071918-1.jpg',
     analysisConfig: defaultAnalysis,
   },
   {
@@ -104,7 +104,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/character.jpg',
+    imageUrl: 'https://i.postimg.cc/y8XBQ5JH/100071919-2.jpg',
     analysisConfig: defaultAnalysis,
   },
   {
@@ -117,7 +117,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/loyalty.jpg',
+    imageUrl: 'https://i.postimg.cc/KzpHp7rT/100071919.jpg',
     analysisConfig: defaultAnalysis,
   },
   {
@@ -130,7 +130,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/teacher-student.jpg',
+    imageUrl: 'https://i.postimg.cc/v8jKWzmR/100071919-1.jpg',
     analysisConfig: defaultAnalysis,
   },
   {
@@ -143,7 +143,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/employee-manager.jpg',
+    imageUrl: 'https://i.postimg.cc/mDqG1Wnv/100071923-2.jpg',
     analysisConfig: defaultAnalysis,
   },
   {
@@ -156,7 +156,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/iq.jpg',
+    imageUrl: 'https://i.postimg.cc/NGWNyjdd/100071923-1.jpg',
     analysisConfig: defaultAnalysis,
   },
   {
@@ -169,7 +169,7 @@ export const officialTemplates: QuizTemplate[] = [
     isOfficial: true,
     createdAt: new Date().toISOString(),
     status: 'approved',
-    imageUrl: '/images/honesty.jpg',
+    imageUrl: 'https://i.postimg.cc/0j6pk7gR/100071923.jpg',
     analysisConfig: defaultAnalysis,
   },
 ];

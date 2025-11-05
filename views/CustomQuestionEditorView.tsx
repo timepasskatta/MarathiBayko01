@@ -1,10 +1,13 @@
 
 import React, { useState } from 'react';
-// FIX: Changed import path to be relative.
-import { Question } from '../types';
-import Button from '../components/Button';
-import Card from '../components/Card';
-import BackButton from '../components/BackButton';
+// FIX: Added .ts extension to fix module resolution issue.
+import { Question } from '../types.ts';
+// FIX: Added .tsx extension to fix module resolution issue.
+import Button from '../components/Button.tsx';
+// FIX: Added .tsx extension to fix module resolution issue.
+import Card from '../components/Card.tsx';
+// FIX: Added .tsx extension to fix module resolution issue.
+import BackButton from '../components/BackButton.tsx';
 
 interface CustomQuestionEditorViewProps {
   onFinish: (questions: Question[]) => void;

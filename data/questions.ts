@@ -1,6 +1,6 @@
 
-// FIX: Changed import path to be relative.
-import { Question } from '../types';
+// FIX: Added .ts extension to the import path for 'types' to resolve module loading errors.
+import { Question } from '../types.ts';
 
 export const initialQuestions: Question[] = [
   // Personality & Nature

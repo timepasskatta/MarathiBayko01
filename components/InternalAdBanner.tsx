@@ -1,7 +1,7 @@
 
 import React from 'react';
-// FIX: Changed import path to be relative.
-import { InternalAd } from '../types';
+// FIX: Added .ts extension to the import path for 'types' to resolve module loading errors.
+import { InternalAd } from '../types.ts';
 
 interface InternalAdBannerProps {
   ad?: InternalAd;

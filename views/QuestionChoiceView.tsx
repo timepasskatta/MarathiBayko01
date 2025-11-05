@@ -1,7 +1,11 @@
+
 import React from 'react';
-import Card from '../components/Card';
-import Button from '../components/Button';
-import BackButton from '../components/BackButton';
+// FIX: Added .tsx extension to fix module resolution issue.
+import Card from '../components/Card.tsx';
+// FIX: Added .tsx extension to fix module resolution issue.
+import Button from '../components/Button.tsx';
+// FIX: Added .tsx extension to fix module resolution issue.
+import BackButton from '../components/BackButton.tsx';
 
 interface QuestionChoiceViewProps {
   onSelectStandard: () => void;

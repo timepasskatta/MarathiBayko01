@@ -15,7 +15,7 @@ const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onLoginSuccess, onBack 
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Use environment variables for credentials with a hardcoded fallback
+    // Simplified login, as bcrypt was causing issues in the environment
     const adminUser = process.env.ADMIN_USERNAME || 'timepasskattaofficial@gmail.com';
     const adminPass = process.env.ADMIN_PASSWORD || 'Vaibhavvaibhav@3601';
 

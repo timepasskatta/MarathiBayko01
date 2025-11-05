@@ -20,7 +20,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
     partnerAnswers,
     questionsUsed,
     analysisConfig,
-    isSecondAttempt
+    isSecondAttempt,
   } = resultData;
 
   const { score, matches, total, analysisText } = useMemo(() => {
@@ -34,7 +34,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
     });
 
     const totalQuestions = activeQuestions.length;
-    const compatibilityScore = totalQuestions > 0 ? (matchCount / totalQuestions) * 100 : 0;
+    const compatibilityScore = totalQuestions > 0 ? Math.round((matchCount / totalQuestions) * 100) : 0;
     
     let text = "Here's how you matched!";
     if (analysisConfig) {
@@ -57,20 +57,16 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
   return (
     <div className="space-y-6">
       {showConfetti && <Confetti />}
-      
-      {isSecondAttempt && (
-          <Card className="text-center bg-yellow-100 border-yellow-400 border-2">
-            <h3 className="text-lg font-bold text-yellow-800">⚠️ Second Attempt Detected</h3>
-            <p className="text-yellow-700 mt-2 text-sm">
-                Warning: This result code has been viewed before. This might be a second attempt after seeing the correct answers.
-            </p>
-          </Card>
-      )}
-
       <Card className="text-center">
         <h2 className="text-2xl md:text-3xl font-bold mb-2">Compatibility Result</h2>
         <p className="text-lg text-gray-600 mb-6">{creatorProfile.name} & {partnerProfile.name}</p>
         
+        {isSecondAttempt && (
+            <div className="p-3 mb-4 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg text-sm">
+                <strong>Warning:</strong> This result has been viewed before. This might be a second attempt after seeing the answers.
+            </div>
+        )}
+
         <CircularProgressBar progress={score} />
         
         <p className="text-lg font-semibold mt-4">You matched on {matches} out of {total} questions.</p>
