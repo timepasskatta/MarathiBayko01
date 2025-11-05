@@ -361,8 +361,8 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ template, setTemplate
                     {/* Questions */}
                     <div className="space-y-4">
                         <h4 className="font-semibold mt-4">Questions</h4>
-                        {template.questions.map((q, qIndex) => (
-                            <div key={qIndex} className="p-4 border rounded bg-rose-50 relative">
+                        {(template.questions || []).map((q, qIndex) => (
+                            <div key={q.id || qIndex} className="p-4 border rounded bg-rose-50 relative">
                                 <p className="font-bold mb-2 text-gray-700">Question {qIndex + 1}</p>
                                 <textarea value={q.text} onChange={e => handleQuestionChange(qIndex, e.target.value)} placeholder="Question text" rows={2} className="w-full p-2 border rounded mb-2"/>
                                 <div className="grid grid-cols-2 gap-2">

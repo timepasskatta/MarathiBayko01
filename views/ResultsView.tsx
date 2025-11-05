@@ -20,6 +20,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
     partnerAnswers,
     questionsUsed,
     analysisConfig,
+    isSecondAttempt
   } = resultData;
 
   const { score, matches, total, analysisText } = useMemo(() => {
@@ -56,6 +57,16 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
   return (
     <div className="space-y-6">
       {showConfetti && <Confetti />}
+      
+      {isSecondAttempt && (
+          <Card className="text-center bg-yellow-100 border-yellow-400 border-2">
+            <h3 className="text-lg font-bold text-yellow-800">⚠️ Second Attempt Detected</h3>
+            <p className="text-yellow-700 mt-2 text-sm">
+                Warning: This result code has been viewed before. This might be a second attempt after seeing the correct answers.
+            </p>
+          </Card>
+      )}
+
       <Card className="text-center">
         <h2 className="text-2xl md:text-3xl font-bold mb-2">Compatibility Result</h2>
         <p className="text-lg text-gray-600 mb-6">{creatorProfile.name} & {partnerProfile.name}</p>

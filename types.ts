@@ -51,6 +51,7 @@ export interface SessionData {
 export interface ResultData extends SessionData {
   partnerProfile: Profile;
   partnerAnswers: Answers;
+  isSecondAttempt?: boolean;
 }
 
 export type AppState =

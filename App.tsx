@@ -14,6 +14,8 @@ import {
     InternalAd 
 } from './types';
 import bcrypt from 'bcryptjs';
+import { decodeBase64ToObject, validateResultData, validateSessionData } from './utils/helpers';
+
 
 // Views
 import HomeView from './views/HomeView';
@@ -64,6 +66,7 @@ const App: React.FC = () => {
     terms: defaultTermsContent
   });
   const [passwordHash, setPasswordHash] = useLocalStorage<string>('admin-pass-hash', bcrypt.hashSync('Vaibhavvaibhav@3601', 10));
+  const [viewedResultCodes, setViewedResultCodes] = useLocalStorage<Record<string, number>>('viewed-result-codes', {});
 
 
   // --- App Initialization ---
@@ -125,6 +128,29 @@ const App: React.FC = () => {
     setAppState({ view: 'home' });
   };
   
+  const handleCodeSubmit = async (code: string): Promise<{success: boolean, message?: string}> => {
+      try {
+        const decoded = await decodeBase64ToObject<any>(code);
+        if (validateResultData(decoded)) {
+          if (viewedResultCodes[code]) {
+            decoded.isSecondAttempt = true;
+          } else {
+            setViewedResultCodes(prev => ({ ...prev, [code]: Date.now() }));
+          }
+          handleViewResults(decoded);
+          return { success: true };
+        } else if (validateSessionData(decoded)) {
+          handleJoinQuiz(decoded);
+          return { success: true };
+        } else {
+          return { success: false, message: 'Invalid code structure.' };
+        }
+      } catch (e) {
+        console.error("Code decoding failed:", e);
+        return { success: false, message: 'Invalid or corrupted code. Please check and try again.' };
+      }
+  };
+
   // Creator Flow
   const handleStartCreator = () => {
     setQuizOrigin('custom'); // Assume custom until they choose
@@ -224,7 +250,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (appState.view) {
       case 'home':
-        return <HomeView quizTemplates={quizTemplates} onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onJoinQuiz={handleJoinQuiz} onViewResults={handleViewResults} adSenseConfig={adSenseConfig} adsEnabled={adSenseConfig.enabled} internalAd={internalAdConfig['home']} onAdminLogin={handleAdminLogin} />;
+        return <HomeView quizTemplates={quizTemplates} onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onCodeSubmit={handleCodeSubmit} adSenseConfig={adSenseConfig} adsEnabled={adSenseConfig.enabled} internalAd={internalAdConfig['home']} />;
       
       // Creator Flow
       case 'creator_profile_setup':
