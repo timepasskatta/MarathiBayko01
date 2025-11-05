@@ -1,4 +1,3 @@
-
 export interface Question {
   id: number;
   category: string;
@@ -9,11 +8,23 @@ export interface Question {
 
 export interface Profile {
   name: string;
+  age: number;
+  gender: string;
+  relationshipType: string;
+  goodThingAboutPartner: string;
+  partnerImprovement: string;
 }
 
 export type Answers = {
   [questionId: number]: string;
 };
+
+export interface AnalysisConfig {
+  range0_25: string;
+  range26_50: string;
+  range51_75: string;
+  range76_100: string;
+}
 
 export interface QuizTemplate {
     id: string;
@@ -26,12 +37,7 @@ export interface QuizTemplate {
     createdAt: string;
     status: 'pending' | 'approved' | 'rejected';
     imageUrl: string;
-    analysisConfig: {
-      range0_25: string;
-      range26_50: string;
-      range51_75: string;
-      range76_100: string;
-    };
+    analysisConfig: AnalysisConfig;
 }
 
 export interface SessionData {

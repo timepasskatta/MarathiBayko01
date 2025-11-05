@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { initialQuestions } from './data/questions';
@@ -14,6 +13,7 @@ import {
     AdSenseConfig, 
     InternalAd 
 } from './types';
+import bcrypt from 'bcryptjs';
 
 // Views
 import HomeView from './views/HomeView';
@@ -63,6 +63,8 @@ const App: React.FC = () => {
     privacy: defaultPrivacyContent,
     terms: defaultTermsContent
   });
+  const [passwordHash, setPasswordHash] = useLocalStorage<string>('admin-pass-hash', bcrypt.hashSync('Vaibhavvaibhav@3601', 10));
+
 
   // --- App Initialization ---
   useEffect(() => {
@@ -166,6 +168,15 @@ const App: React.FC = () => {
   // Partner Flow
   const handleJoinQuiz = (session: SessionData) => {
     setSessionData(session);
+    setActiveTemplate({ // Create a temporary template for context
+        id: `quiz-${Date.now()}`,
+        title: `Quiz by ${session.creatorProfile.name}`,
+        description: '',
+        creatorName: session.creatorProfile.name,
+        questions: session.questionsUsed,
+        isPublic: false, isOfficial: false, createdAt: new Date().toISOString(), status: 'approved', imageUrl: '',
+        analysisConfig: session.analysisConfig
+    });
     setAppState({ view: 'partner_profile_setup' });
   };
   const handlePartnerProfileSave = (profile: Profile) => {
@@ -213,11 +224,11 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (appState.view) {
       case 'home':
-        return <HomeView quizTemplates={quizTemplates} onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onJoinQuiz={handleJoinQuiz} onAdminLogin={handleAdminLogin} onViewResults={handleViewResults} adSenseConfig={adSenseConfig} adsEnabled={adSenseConfig.enabled} internalAd={internalAdConfig['home']} />;
+        return <HomeView quizTemplates={quizTemplates} onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onJoinQuiz={handleJoinQuiz} onViewResults={handleViewResults} adSenseConfig={adSenseConfig} adsEnabled={adSenseConfig.enabled} internalAd={internalAdConfig['home']} onAdminLogin={handleAdminLogin} />;
       
       // Creator Flow
       case 'creator_profile_setup':
-        return <ProfileSetupView userType="Creator" onSave={handleCreatorProfileSave} onBack={goToHome} />;
+        return <ProfileSetupView userType="Creator" onSave={handleCreatorProfileSave} onBack={goToHome} activeTemplate={activeTemplate} />;
       case 'question_choice':
         const creatorProfileBack = () => {
           setQuizOrigin(null); // Reset origin when going back
@@ -227,7 +238,6 @@ const App: React.FC = () => {
       case 'custom_question_editor':
         return <CustomQuestionEditorView onFinish={handleCustomQuestionsFinish} onBack={() => setAppState({ view: 'question_choice' })} />;
       case 'creator_questionnaire':
-        // FIX: Fixed back button logic for all quiz origins
         const handleCreatorQuestionnaireBack = () => {
           if (quizOrigin === 'template') {
             goToHome();
@@ -235,21 +245,20 @@ const App: React.FC = () => {
             setAppState({ view: 'question_choice' });
           }
         };
-        return <QuestionnaireView userType="Creator" questions={questionsToUse} onComplete={handleCreatorQuestionnaireComplete} onBack={handleCreatorQuestionnaireBack}/>;
+        return <QuestionnaireView userType="Creator" questions={questionsToUse} onComplete={handleCreatorQuestionnaireComplete} onBack={handleCreatorQuestionnaireBack} activeTemplate={activeTemplate} internalAd={internalAdConfig['questionnaire']}/>;
       case 'share':
-        if (!creatorProfile) return <p>Error: Creator profile not found.</p>;
+        if (!creatorProfile || !activeTemplate) return <p>Error: Creator profile or active template not found.</p>;
         return <ShareAndPublishView creatorProfile={creatorProfile} creatorAnswers={creatorAnswers} questionsUsed={questionsToUse} setQuizTemplates={setQuizTemplates} onBack={() => setAppState({ view: 'creator_questionnaire'})} internalAd={internalAdConfig['share']} activeTemplate={activeTemplate}/>;
 
       // Partner Flow
       case 'partner_profile_setup':
-        return <ProfileSetupView userType="Partner" onSave={handlePartnerProfileSave} onBack={goToHome} />;
+        return <ProfileSetupView userType="Partner" onSave={handlePartnerProfileSave} onBack={goToHome} activeTemplate={activeTemplate} />;
       case 'partner_questionnaire':
         if (!sessionData) return <p>Error: Session data not found.</p>;
-        return <QuestionnaireView userType="Partner" questions={sessionData.questionsUsed} onComplete={handlePartnerQuestionnaireComplete} onBack={() => setAppState({ view: 'partner_profile_setup'})}/>;
+        return <QuestionnaireView userType="Partner" questions={sessionData.questionsUsed} onComplete={handlePartnerQuestionnaireComplete} onBack={() => setAppState({ view: 'partner_profile_setup'})} activeTemplate={activeTemplate} internalAd={internalAdConfig['questionnaire']}/>;
       case 'partner_finish':
         if (!appState.resultData) return <p>Error: Result data not found.</p>;
-        // FIX: Removed `onViewResults` prop as it is not defined on PartnerFinishViewProps. The `handlePartnerFinish` function was also removed as it became unused.
-        return <PartnerFinishView resultData={appState.resultData} onBackToHome={goToHome} />;
+        return <PartnerFinishView resultData={appState.resultData} onBackToHome={goToHome} onViewResults={handleViewResults} />;
 
       // Results
       case 'results':
@@ -258,9 +267,9 @@ const App: React.FC = () => {
 
       // Admin
       case 'admin_login':
-        return <AdminLoginView onLoginSuccess={handleLoginSuccess} onBack={goToHome} />;
+        return <AdminLoginView onLoginSuccess={handleLoginSuccess} onBack={goToHome} passwordHash={passwordHash} />;
       case 'admin_dashboard':
-        return <AdminDashboardView templates={quizTemplates} setTemplates={setQuizTemplates} adSenseConfig={adSenseConfig} setAdSenseConfig={setAdSenseConfig} internalAdConfig={internalAdConfig} setInternalAdConfig={setInternalAdConfig} staticPages={staticPages} setStaticPages={setStaticPages} onLogout={goToHome} />;
+        return <AdminDashboardView templates={quizTemplates} setTemplates={setQuizTemplates} adSenseConfig={adSenseConfig} setAdSenseConfig={setAdSenseConfig} internalAdConfig={internalAdConfig} setInternalAdConfig={setInternalAdConfig} staticPages={staticPages} setStaticPages={setStaticPages} onLogout={goToHome} passwordHash={passwordHash} setPasswordHash={setPasswordHash} />;
 
       // Static Pages
       case 'static_page':
@@ -289,11 +298,12 @@ const App: React.FC = () => {
                 {renderContent()}
             </main>
              <footer className="text-center mt-12 text-sm text-gray-400">
-                <div className="flex justify-center gap-4 mb-4">
+                <div className="flex justify-center flex-wrap gap-4 mb-4">
                     <button onClick={() => handleViewStaticPage('about')} className="hover:text-pink-600 hover:underline">About</button>
                     <button onClick={() => handleViewStaticPage('contact')} className="hover:text-pink-600 hover:underline">Contact</button>
                     <button onClick={() => handleViewStaticPage('privacy')} className="hover:text-pink-600 hover:underline">Privacy</button>
                     <button onClick={() => handleViewStaticPage('terms')} className="hover:text-pink-600 hover:underline">Terms</button>
+                    <button onClick={handleAdminLogin} className="hover:text-pink-600 hover:underline">Admin</button>
                 </div>
                 <div className="mb-6">
                   <button 

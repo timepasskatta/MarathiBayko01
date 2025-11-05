@@ -2,24 +2,25 @@ import React, { useState } from 'react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import BackButton from '../components/BackButton';
+import bcrypt from 'bcryptjs';
+
 
 interface AdminLoginViewProps {
   onLoginSuccess: () => void;
   onBack: () => void;
+  passwordHash: string;
 }
 
-const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onLoginSuccess, onBack }) => {
+const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onLoginSuccess, onBack, passwordHash }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Use environment variables for credentials with a fallback for local dev
-    const adminUser = process.env.ADMIN_USERNAME || 'admin';
-    const adminPass = process.env.ADMIN_PASSWORD || 'Vaibhavvaibhav@3601';
+    const adminUser = process.env.ADMIN_USERNAME || 'admin@marathibayko.com';
 
-    if (username === adminUser && password === adminPass) {
+    if (username === adminUser && bcrypt.compareSync(password, passwordHash)) {
       onLoginSuccess();
     } else {
       setError('Invalid credentials.');

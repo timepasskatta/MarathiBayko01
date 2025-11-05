@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { ResultData, InternalAd } from '../types';
 import Button from '../components/Button';
@@ -66,8 +65,24 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
         <p className="text-lg font-semibold mt-4">You matched on {matches} out of {total} questions.</p>
         <p className="text-gray-600 mt-4 max-w-lg mx-auto italic">"{analysisText}"</p>
       </Card>
-
+      
       <InternalAdBanner ad={internalAdConfig['results']} />
+
+      <Card>
+        <h3 className="text-xl font-bold text-center mb-6">Your Thoughts About Each Other</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="p-4 rounded-lg bg-rose-50 border border-rose-200">
+            <p className="font-bold text-pink-600 mb-2">{creatorProfile.name}'s thoughts on {partnerProfile.name}:</p>
+            <p className="text-gray-700 mb-2"><strong>A wonderful quality:</strong> {creatorProfile.goodThingAboutPartner}</p>
+            <p className="text-gray-700"><strong>A suggestion for growth:</strong> {creatorProfile.partnerImprovement}</p>
+          </div>
+           <div className="p-4 rounded-lg bg-rose-50 border border-rose-200">
+            <p className="font-bold text-pink-600 mb-2">{partnerProfile.name}'s thoughts on {creatorProfile.name}:</p>
+            <p className="text-gray-700 mb-2"><strong>A wonderful quality:</strong> {partnerProfile.goodThingAboutPartner}</p>
+            <p className="text-gray-700"><strong>A suggestion for growth:</strong> {partnerProfile.partnerImprovement}</p>
+          </div>
+        </div>
+      </Card>
 
       <Card>
         <h3 className="text-xl font-bold text-center mb-6">Answer Breakdown</h3>
@@ -86,7 +101,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
                     <p className="text-gray-600">{creatorAnswer || 'No answer'}</p>
                   </div>
                   <div className={`p-2 rounded-md ${isMatch ? 'bg-green-100' : 'bg-red-100'}`}>
-                    <p className="font-bold text-gray-700">{partnerProfile.name}'s Answer:</p>
+                    <p className="font-bold text-gray-700">{partnerProfile.name}'s Guess:</p>
                     <p className="text-gray-600">{partnerAnswer || 'No answer'}</p>
                   </div>
                 </div>
@@ -97,7 +112,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
       </Card>
 
       <div className="text-center">
-          <Button onClick={onBackToHome} variant="secondary">Back to Home</Button>
+          <Button onClick={onBackToHome} variant="secondary">Create a New Quiz</Button>
       </div>
     </div>
   );
