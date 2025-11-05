@@ -1,275 +1,110 @@
-import React, { useState, useEffect } from 'react';
-import { QuizTemplate, PageContent, Question, AdSenseConfig } from '../types';
-import { generateId } from '../utils/helpers';
+
+import React from 'react';
+import { QuizTemplate, AdSenseConfig, InternalAd } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
 
 interface AdminDashboardViewProps {
-  quizTemplates: QuizTemplate[];
-  setQuizTemplates: React.Dispatch<React.SetStateAction<QuizTemplate[]>>;
-  pageContent: PageContent;
-  setPageContent: React.Dispatch<React.SetStateAction<PageContent>>;
-  adsEnabled: boolean;
-  setAdsEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  templates: QuizTemplate[];
+  setTemplates: React.Dispatch<React.SetStateAction<QuizTemplate[]>>;
   adSenseConfig: AdSenseConfig;
   setAdSenseConfig: React.Dispatch<React.SetStateAction<AdSenseConfig>>;
+  internalAd: InternalAd;
+  setInternalAd: React.Dispatch<React.SetStateAction<InternalAd>>;
   onLogout: () => void;
 }
 
-const createEmptyQuestion = (): Question => ({ id: Date.now() + Math.random(), text: '', category: 'Official', options: ['', '', '', ''], active: true });
-const initialFormState = { id: '', title: '', description: '', questions: [createEmptyQuestion()] };
+const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ templates, setTemplates, adSenseConfig, setAdSenseConfig, internalAd, setInternalAd, onLogout }) => {
+  
+  const handleTemplateStatusChange = (id: string, status: 'approved' | 'rejected') => {
+    setTemplates(prev => prev.map(t => (t.id === id ? { ...t, status, isPublic: status === 'approved' } : t)));
+  };
 
-const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ 
-  quizTemplates, setQuizTemplates, 
-  pageContent, setPageContent, 
-  adsEnabled, setAdsEnabled, 
-  adSenseConfig, setAdSenseConfig,
-  onLogout 
-}) => {
-  
-  const [localPageContent, setLocalPageContent] = useState(pageContent);
-  const [localAdSenseConfig, setLocalAdSenseConfig] = useState(adSenseConfig);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<QuizTemplate | null>(null);
-  const [formState, setFormState] = useState(initialFormState);
-
-  useEffect(() => {
-    if (editingTemplate) {
-      setFormState({
-        id: editingTemplate.id,
-        title: editingTemplate.title,
-        description: editingTemplate.description,
-        questions: editingTemplate.questions
-      });
-      setShowCreateForm(true);
-    } else {
-      setFormState(initialFormState);
+  const handleTemplateDelete = (id: string) => {
+    if (window.confirm("Are you sure you want to permanently delete this template?")) {
+        setTemplates(prev => prev.filter(t => t.id !== id));
     }
-  }, [editingTemplate]);
-  
-  const handleApprove = (id: string) => {
-    setQuizTemplates(prev => prev.map(t => t.id === id ? { ...t, status: 'approved', isPublic: true } : t));
-  };
-  
-  const handleReject = (id: string) => {
-    if (window.confirm('Are you sure you want to reject and delete this submission?')) {
-      setQuizTemplates(prev => prev.filter(t => t.id !== id));
-    }
-  };
-  
-  const deleteTemplate = (id: string) => {
-    if (id === 'standard-quiz-001') {
-        alert("The standard quiz cannot be deleted.");
-        return;
-    }
-    if (window.confirm('Are you sure you want to delete this template?')) {
-      setQuizTemplates(prev => prev.filter(t => t.id !== id));
-    }
-  };
-  
-  const handlePageContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setLocalPageContent({...localPageContent, [e.target.name]: e.target.value });
-  };
-  
-  const savePageContent = () => {
-      setPageContent(localPageContent);
-      alert('Page content saved!');
   };
 
   const handleAdSenseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalAdSenseConfig({ ...localAdSenseConfig, [e.target.name]: e.target.value });
-  };
-
-  const saveAdSenseConfig = () => {
-      setAdSenseConfig(localAdSenseConfig);
-      alert('AdSense settings saved!');
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormState({...formState, [e.target.name]: e.target.value});
-  };
-
-  const handleQuestionChange = (qIndex: number, text: string) => {
-    const questions = [...formState.questions];
-    questions[qIndex].text = text;
-    setFormState({...formState, questions});
+    const { name, value, type, checked } = e.target;
+    setAdSenseConfig(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+    }));
   };
   
-  const handleOptionChange = (qIndex: number, oIndex: number, text: string) => {
-    const questions = [...formState.questions];
-    questions[qIndex].options[oIndex] = text;
-    setFormState({...formState, questions});
-  };
-  
-  const addQuestion = () => {
-    const questions = [...formState.questions, createEmptyQuestion()];
-    setFormState({...formState, questions});
+  const handleInternalAdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setInternalAd(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
-  const resetForm = () => {
-    setShowCreateForm(false);
-    setEditingTemplate(null);
-    setFormState(initialFormState);
-  };
-  
-  const handleSaveQuiz = () => {
-    if (editingTemplate) { // Update existing quiz
-      const updatedQuiz: QuizTemplate = {
-        ...editingTemplate,
-        title: formState.title,
-        description: formState.description,
-        questions: formState.questions,
-      };
-      setQuizTemplates(prev => prev.map(t => t.id === editingTemplate.id ? updatedQuiz : t));
-    } else { // Create new quiz
-      const newQuiz: QuizTemplate = {
-        id: generateId(),
-        title: formState.title,
-        description: formState.description,
-        creatorName: 'Admin',
-        questions: formState.questions,
-        isPublic: true,
-        isOfficial: true,
-        createdAt: new Date().toISOString(),
-        status: 'approved',
-      };
-      setQuizTemplates(prev => [...prev, newQuiz]);
-    }
-    resetForm();
-  };
-  
-  const pendingTemplates = quizTemplates.filter(t => t.status === 'pending');
-  const approvedTemplates = quizTemplates.filter(t => t.status === 'approved');
+  const pendingTemplates = templates.filter(t => t.status === 'pending');
+  const approvedTemplates = templates.filter(t => t.status === 'approved');
+  const rejectedTemplates = templates.filter(t => t.status === 'rejected');
 
   return (
     <div className="space-y-6">
-      <Card>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Admin Dashboard</h2>
-          <Button onClick={onLogout} variant="secondary" className="w-auto">Logout</Button>
-        </div>
-      </Card>
-
-      {/* Pending Approval */}
-      {pendingTemplates.length > 0 && (
         <Card>
-          <h3 className="text-xl font-bold mb-4 text-orange-600">Pending Approval ({pendingTemplates.length})</h3>
-          <div className="space-y-4">
-            {pendingTemplates.map(template => (
-              <div key={template.id} className="p-4 border rounded-lg bg-orange-50">
-                <h4 className="font-bold">{template.title} <span className="text-sm font-normal text-gray-500">by {template.creatorName}</span></h4>
-                <p className="text-sm text-gray-600 mb-2">{template.description}</p>
-                <details>
-                  <summary className="text-sm text-blue-600 cursor-pointer">View Questions ({template.questions.length})</summary>
-                  <ul className="list-disc pl-5 mt-2 text-sm text-gray-700">
-                    {template.questions.map(q => <li key={q.id}>{q.text}</li>)}
-                  </ul>
-                </details>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button onClick={() => handleApprove(template.id)} className="w-auto text-xs py-1 px-2 bg-green-500 hover:bg-green-600">Approve</Button>
-                  <Button onClick={() => handleReject(template.id)} className="w-auto text-xs py-1 px-2 bg-red-500 hover:bg-red-600">Reject</Button>
-                </div>
-              </div>
-            ))}
-          </div>
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Admin Dashboard</h2>
+                <Button onClick={onLogout} variant="secondary" className="w-auto">Logout</Button>
+            </div>
         </Card>
-      )}
 
-      {/* Manage Public Templates */}
-      <Card>
-        <h3 className="text-xl font-bold mb-4">Manage Quizzes</h3>
-        <Button onClick={() => { setShowCreateForm(!showCreateForm); setEditingTemplate(null); }}>
-          {showCreateForm && !editingTemplate ? 'Cancel' : 'Create New Official Quiz'}
-        </Button>
-        
-        {showCreateForm && (
-          <div className="mt-4 p-4 border rounded-lg bg-rose-50 space-y-4">
-            <h4 className="font-bold text-lg">{editingTemplate ? 'Editing Quiz' : 'New Official Quiz'}</h4>
-            <input type="text" name="title" value={formState.title} onChange={handleFormChange} placeholder="Quiz Title" className="w-full p-2 border rounded" />
-            <textarea name="description" value={formState.description} onChange={handleFormChange} placeholder="Quiz Description" className="w-full p-2 border rounded" />
-            {formState.questions.map((q, qIndex) => (
-              <div key={qIndex} className="p-2 border rounded bg-white">
-                <input value={q.text} onChange={(e) => handleQuestionChange(qIndex, e.target.value)} placeholder={`Question ${qIndex + 1}`} className="w-full p-1 border rounded mb-2 font-semibold" />
-                <div className="grid grid-cols-2 gap-2">
-                  {q.options.map((opt, oIndex) => (
-                    <input key={oIndex} value={opt} onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)} placeholder={`Option ${oIndex + 1}`} className="w-full p-1 border rounded" />
-                  ))}
+        <Card>
+            <h3 className="text-xl font-bold mb-4">Ad Management</h3>
+            <div className="space-y-4">
+                {/* AdSense Config */}
+                <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold text-lg mb-2">Google AdSense</h4>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" name="enabled" checked={adSenseConfig.enabled} onChange={handleAdSenseChange} />
+                        Enable AdSense
+                    </label>
+                    <div className="space-y-2 mt-2">
+                        <input type="text" name="clientId" placeholder="AdSense Client ID (ca-pub-...)" value={adSenseConfig.clientId} onChange={handleAdSenseChange} className="w-full p-2 border rounded" disabled={!adSenseConfig.enabled} />
+                        <input type="text" name="adSlotId" placeholder="AdSense Slot ID" value={adSenseConfig.adSlotId} onChange={handleAdSenseChange} className="w-full p-2 border rounded" disabled={!adSenseConfig.enabled}/>
+                    </div>
                 </div>
-              </div>
-            ))}
-            <div className="flex gap-2">
-              <Button onClick={addQuestion} variant="secondary">Add Question</Button>
-              <Button onClick={handleSaveQuiz}>{editingTemplate ? 'Update Quiz' : 'Save Quiz'}</Button>
+                {/* Internal Ad Config */}
+                 <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold text-lg mb-2">Internal Ad</h4>
+                    <label className="flex items-center gap-2">
+                        <input type="checkbox" name="enabled" checked={internalAd.enabled} onChange={handleInternalAdChange} />
+                        Enable Internal Ad
+                    </label>
+                    <div className="space-y-2 mt-2">
+                        <input type="text" name="imageUrl" placeholder="Image URL" value={internalAd.imageUrl} onChange={handleInternalAdChange} className="w-full p-2 border rounded" disabled={!internalAd.enabled} />
+                        <input type="text" name="redirectUrl" placeholder="Redirect URL" value={internalAd.redirectUrl} onChange={handleInternalAdChange} className="w-full p-2 border rounded" disabled={!internalAd.enabled}/>
+                    </div>
+                </div>
             </div>
-          </div>
-        )}
+        </Card>
 
-        <div className="space-y-4 mt-4">
-          {approvedTemplates.length > 0 ? approvedTemplates.map(template => (
-            <div key={template.id} className={`p-4 border rounded-lg ${template.isOfficial ? 'bg-blue-50' : 'bg-gray-50'}`}>
-              <h4 className="font-bold">{template.title} <span className="text-sm font-normal text-gray-500">by {template.creatorName}</span></h4>
-              <p className="text-sm text-gray-600">{template.description}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button onClick={() => setEditingTemplate(template)} className="w-auto text-xs py-1 px-2 bg-gray-500 hover:bg-gray-600">Edit</Button>
-                <Button onClick={() => deleteTemplate(template.id)} className="w-auto text-xs py-1 px-2 bg-red-500 hover:bg-red-600">Delete</Button>
-              </div>
+        <Card>
+            <h3 className="text-xl font-bold mb-4">Pending Submissions ({pendingTemplates.length})</h3>
+            <div className="space-y-2">
+                {pendingTemplates.length > 0 ? pendingTemplates.map(t => (
+                    <div key={t.id} className="p-3 border rounded-md flex justify-between items-center bg-yellow-50">
+                        <div>
+                            <p className="font-bold">{t.title}</p>
+                            <p className="text-sm text-gray-600">{t.description} (by {t.creatorName})</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button className="w-auto text-sm py-1 px-3" onClick={() => handleTemplateStatusChange(t.id, 'approved')}>Approve</Button>
+                            <Button className="w-auto text-sm py-1 px-3" variant="secondary" onClick={() => handleTemplateStatusChange(t.id, 'rejected')}>Reject</Button>
+                        </div>
+                    </div>
+                )) : <p>No pending submissions.</p>}
             </div>
-          )) : <p className="text-center text-gray-500 mt-4">No approved templates yet.</p>}
-        </div>
-      </Card>
-      
-      {/* Site Settings */}
-      <Card>
-          <h3 className="text-xl font-bold mb-4">Site & Ad Settings</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                <p>Display Ads</p>
-                <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={adsEnabled} onChange={() => setAdsEnabled(p => !p)} className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-pink-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
-                </label>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-lg mt-4">AdSense Settings</h4>
-              <div className="p-2 bg-gray-50 rounded-lg mt-2 space-y-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Client ID (ca-pub-xxxxxxxx)</label>
-                    <input type="text" name="clientId" value={localAdSenseConfig.clientId} onChange={handleAdSenseChange} className="w-full p-2 border rounded mt-1" />
-                  </div>
-                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Ad Slot ID</label>
-                    <input type="text" name="adSlotId" value={localAdSenseConfig.adSlotId} onChange={handleAdSenseChange} className="w-full p-2 border rounded mt-1" />
-                  </div>
-                  <Button onClick={saveAdSenseConfig} variant="secondary" className="w-auto">Save Ad Settings</Button>
-              </div>
-            </div>
-          </div>
-      </Card>
-      
-      {/* Manage Site Pages */}
-      <Card>
-        <h3 className="text-xl font-bold mb-4">Manage Site Pages</h3>
-        <div className="space-y-4">
-            <div>
-                <label className="font-semibold">About Us</label>
-                <textarea name="aboutUs" value={localPageContent.aboutUs} onChange={handlePageContentChange} rows={4} className="w-full p-2 border rounded mt-1"/>
-            </div>
-            <div>
-                <label className="font-semibold">Contact Us</label>
-                <textarea name="contactUs" value={localPageContent.contactUs} onChange={handlePageContentChange} rows={4} className="w-full p-2 border rounded mt-1"/>
-            </div>
-            <div>
-                <label className="font-semibold">Privacy Policy</label>
-                <textarea name="privacyPolicy" value={localPageContent.privacyPolicy} onChange={handlePageContentChange} rows={4} className="w-full p-2 border rounded mt-1"/>
-            </div>
-            <div>
-                <label className="font-semibold">Terms & Conditions</label>
-                <textarea name="termsAndConditions" value={localPageContent.termsAndConditions} onChange={handlePageContentChange} rows={4} className="w-full p-2 border rounded mt-1"/>
-            </div>
-            <Button onClick={savePageContent}>Save Page Content</Button>
-        </div>
-      </Card>
+        </Card>
+
+        {/* You could add sections for approved/rejected templates here if needed */}
+
     </div>
   );
 };

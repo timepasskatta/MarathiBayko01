@@ -1,3 +1,4 @@
+// FIX: Changed import path to be relative.
 import { SessionData, ResultData } from "../types";
 
 export const generateId = (length: number = 8): string => {

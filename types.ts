@@ -1,14 +1,3 @@
-export interface Question {
-  id: number;
-  category: string;
-  text: string;
-  options: string[];
-  active: boolean;
-}
-
-export interface Answers {
-  [questionId: number]: string;
-}
 
 export interface Profile {
   name: string;
@@ -19,17 +8,15 @@ export interface Profile {
   favMarathiWord: string;
 }
 
-export interface QuizTemplate {
-  id: string;
-  title: string;
-  description: string;
-  creatorName: string;
-  questions: Question[];
-  isPublic: boolean;
-  isOfficial: boolean;
-  createdAt: string;
-  status: 'pending' | 'approved' | 'rejected';
+export interface Question {
+  id: number | string;
+  category: string;
+  text: string;
+  options: string[];
+  active: boolean;
 }
+
+export type Answers = Record<Question['id'], string>;
 
 export interface SessionData {
   creatorProfile: Profile;
@@ -45,31 +32,45 @@ export interface ResultData {
   questionsUsed: Question[];
 }
 
-export type View = 
-  | 'home' 
-  | 'creatorProfileSetup' 
-  | 'partnerProfileSetup' 
-  | 'questionChoice' 
-  | 'customQuestionEditor'
-  | 'creatorQuestionnaire' 
-  | 'partnerQuestionnaire'
-  | 'share' 
-  | 'results'
-  | 'adminLogin'
-  | 'adminDashboard'
-  | 'aboutUs'
-  | 'contactUs'
-  | 'privacyPolicy'
-  | 'termsAndConditions';
-
-export interface PageContent {
-    aboutUs: string;
-    contactUs: string;
-    privacyPolicy: string;
-    termsAndConditions: string;
+export interface QuizTemplate {
+    id: string;
+    title: string;
+    description: string;
+    creatorName: string;
+    questions: Question[];
+    isPublic: boolean;
+    isOfficial: boolean;
+    createdAt: string;
+    status: 'pending' | 'approved' | 'rejected';
+    imageUrl?: string;
 }
 
 export interface AdSenseConfig {
-  clientId: string;
-  adSlotId: string;
+    enabled: boolean;
+    clientId: string;
+    adSlotId: string;
+}
+
+export interface InternalAd {
+    enabled: boolean;
+    imageUrl: string;
+    redirectUrl: string;
+}
+
+export type AppView = 
+  | 'home'
+  | 'creator_profile_setup'
+  | 'question_choice'
+  | 'custom_question_editor'
+  | 'creator_questionnaire'
+  | 'share'
+  | 'partner_profile_setup'
+  | 'partner_questionnaire'
+  | 'partner_finish'
+  | 'results'
+  | 'admin_login'
+  | 'admin_dashboard';
+
+export interface AppState {
+    view: AppView;
 }

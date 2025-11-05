@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Question, Answers } from '../types';
 import Button from '../components/Button';
@@ -7,95 +8,74 @@ import BackButton from '../components/BackButton';
 
 interface QuestionnaireViewProps {
   questions: Question[];
-  onFinish: (answers: Answers) => void;
-  onBack?: () => void;
+  onComplete: (answers: Answers) => void;
+  userType: 'Creator' | 'Partner';
+  onBack: () => void;
 }
 
-const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({ questions, onFinish, onBack }) => {
+const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({ questions, onComplete, userType, onBack }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
+  const [error, setError] = useState('');
 
-  const currentQuestion = questions[currentQuestionIndex];
+  const activeQuestions = questions.filter(q => q.active);
+  const currentQuestion = activeQuestions[currentQuestionIndex];
+  const selectedAnswer = answers[currentQuestion?.id];
 
-  const handleAnswerSelect = (option: string) => {
+  const handleSelectAnswer = (option: string) => {
+    if (!currentQuestion) return;
     setAnswers({ ...answers, [currentQuestion.id]: option });
+    setError('');
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
+    if (!selectedAnswer) {
+      setError('Please select an answer to continue.');
+      return;
+    }
+    if (currentQuestionIndex < activeQuestions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      onComplete(answers);
     }
   };
 
-  const handlePrev = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-    }
-  };
-  
-  const handleFinish = () => {
-      onFinish(answers);
+  if (!currentQuestion) {
+    return <Card><p>No active questions available.</p></Card>;
   }
-
-  const answeredCount = Object.keys(answers).filter(key => answers[parseInt(key)]).length;
-  const isCreator = !onBack; // A simple heuristic: partner questionnaire doesn't have a back button in this flow
 
   return (
     <Card className="relative pt-12">
-      {onBack && <BackButton onClick={onBack} />}
-      <div className="mb-4">
-        <p className="text-center text-sm text-gray-500 mb-2">
-          {isCreator ? "Guess your partner's answers to these questions." : "Answer these questions about yourself. Your partner will try to guess your answers."}
+        <BackButton onClick={onBack} />
+      <div className="mb-6">
+        <ProgressBar current={currentQuestionIndex + 1} total={activeQuestions.length} />
+        <p className="text-center text-sm text-gray-500 mt-2">
+          Question {currentQuestionIndex + 1} of {activeQuestions.length} ({userType})
         </p>
-        <p className="text-center text-sm text-gray-500 mb-2">
-          Question {currentQuestionIndex + 1} of {questions.length}
-        </p>
-        <ProgressBar current={answeredCount} total={questions.length} />
       </div>
-
-      <div className="text-center">
-        <span className="inline-block bg-rose-100 text-rose-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full mb-4">
-          {currentQuestion.category}
-        </span>
-        <h3 className="text-xl md:text-2xl font-semibold mb-6 min-h-[56px]">{currentQuestion.text}</h3>
-      </div>
-
-      <div className="space-y-3">
+      <h2 className="text-xl md:text-2xl font-bold text-center mb-6 min-h-[6rem] flex items-center justify-center">
+        {currentQuestion.text}
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {currentQuestion.options.map((option, index) => (
-          <label
+          <button
             key={index}
-            className={`block w-full text-left p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
-              answers[currentQuestion.id] === option
-                ? 'bg-pink-500 border-pink-500 text-white shadow-lg'
-                : 'bg-white border-gray-200 hover:bg-rose-50'
+            onClick={() => handleSelectAnswer(option)}
+            className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
+              selectedAnswer === option
+                ? 'bg-pink-500 border-pink-500 text-white shadow-lg scale-105'
+                : 'bg-white border-rose-200 hover:bg-rose-100 hover:border-pink-300'
             }`}
           >
-            <input
-              type="radio"
-              name={`question-${currentQuestion.id}`}
-              value={option}
-              checked={answers[currentQuestion.id] === option}
-              onChange={() => handleAnswerSelect(option)}
-              className="sr-only"
-            />
             {option}
-          </label>
+          </button>
         ))}
       </div>
-      
-      <div className="mt-8 flex justify-between items-center gap-4">
-        <Button onClick={handlePrev} disabled={currentQuestionIndex === 0} variant="secondary" className="flex-1 disabled:opacity-50">
-          Previous
+      {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
+      <div className="mt-8">
+        <Button onClick={handleNext}>
+          {currentQuestionIndex < activeQuestions.length - 1 ? 'Next Question' : 'Finish Quiz'}
         </Button>
-        {currentQuestionIndex < questions.length - 1 ? (
-          <Button onClick={handleNext} disabled={!answers[currentQuestion.id]} className="flex-1 disabled:opacity-50">
-            Next
-          </Button>
-        ) : (
-          <Button onClick={handleFinish} disabled={answeredCount < questions.length} className="flex-1 disabled:opacity-50">
-            Finish & Save ({answeredCount}/{questions.length})
-          </Button>
-        )}
       </div>
     </Card>
   );

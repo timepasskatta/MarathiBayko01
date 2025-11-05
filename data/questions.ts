@@ -1,4 +1,5 @@
 
+// FIX: Changed import path to be relative.
 import { Question } from '../types';
 
 export const initialQuestions: Question[] = [

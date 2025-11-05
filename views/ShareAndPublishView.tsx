@@ -1,9 +1,12 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Profile, Answers, Question, QuizTemplate, SessionData } from '../types';
+// FIX: Changed import path to be relative.
+import { Profile, Answers, Question, QuizTemplate, SessionData, InternalAd } from '../types';
 import { generateId, encodeObjectToBase64 } from '../utils/helpers';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import BackButton from '../components/BackButton';
+import InternalAdBanner from '../components/InternalAdBanner';
 
 interface ShareAndPublishViewProps {
   creatorProfile: Profile | null;
@@ -12,9 +15,10 @@ interface ShareAndPublishViewProps {
   onSessionCreated: (session: SessionData) => void;
   setQuizTemplates: React.Dispatch<React.SetStateAction<QuizTemplate[]>>;
   onBack: () => void;
+  internalAd: InternalAd;
 }
 
-const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfile, creatorAnswers, questionsUsed, onSessionCreated, setQuizTemplates, onBack }) => {
+const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfile, creatorAnswers, questionsUsed, onSessionCreated, setQuizTemplates, onBack, internalAd }) => {
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   
@@ -73,6 +77,7 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
             isOfficial: false,
             createdAt: new Date().toISOString(),
             status: 'pending', // Set status to pending for admin review
+            imageUrl: '', // Add placeholder for image
         };
         setQuizTemplates(prev => [...prev, newTemplate]);
         setIsSubmitted(true);
@@ -106,6 +111,8 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
           {copied ? 'Copied to Clipboard!' : 'Copy Invitation Code'}
         </Button>
       </Card>
+      
+      <InternalAdBanner ad={internalAd} />
 
       <Card className="text-left">
           <h3 className="text-xl font-bold mb-4">📣 Optional: Publish Your Quiz?</h3>

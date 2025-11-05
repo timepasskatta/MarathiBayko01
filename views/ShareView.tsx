@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
-import { Profile, Answers, Question, QuizTemplate } from '../types';
-import { generateId } from '../utils/helpers';
+// FIX: Corrected import path for types.
+import { Profile, Answers, Question, QuizTemplate, SessionData } from '../types';
+import { generateId, encodeObjectToBase64 } from '../utils/helpers';
 import Button from '../components/Button';
 import Card from '../components/Card';
 
@@ -8,12 +10,12 @@ interface ShareAndPublishViewProps {
   creatorProfile: Profile | null;
   creatorAnswers: Answers;
   questionsUsed: Question[];
-  onSessionCreated: (sessionId: string) => void;
+  onSessionCreated: (sessionData: SessionData) => void;
   setQuizTemplates: React.Dispatch<React.SetStateAction<QuizTemplate[]>>;
 }
 
 const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfile, creatorAnswers, questionsUsed, onSessionCreated, setQuizTemplates }) => {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   
   const [title, setTitle] = useState('');
@@ -22,25 +24,25 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
 
   useEffect(() => {
     if (creatorProfile) {
-      const newSessionId = generateId();
-      setSessionId(newSessionId);
-
-      // We create the session for the partner to join
-      const sessionData = {
-        quizTemplateId: 'custom', // could be a real template id
+      const sessionData: SessionData = {
         creatorProfile,
         creatorAnswers,
         questionsUsed,
       };
-      localStorage.setItem(`session-${newSessionId}`, JSON.stringify(sessionData));
+
+      const generateCode = async () => {
+        const encoded = await encodeObjectToBase64(sessionData);
+        setInvitationCode(encoded);
+        onSessionCreated(sessionData);
+      };
       
-      onSessionCreated(newSessionId);
+      generateCode();
     }
   }, [creatorProfile, creatorAnswers, questionsUsed, onSessionCreated]);
 
   const handleCopy = () => {
-    if (sessionId) {
-      navigator.clipboard.writeText(sessionId);
+    if (invitationCode) {
+      navigator.clipboard.writeText(invitationCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -52,7 +54,6 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
           return;
       }
       if(creatorProfile) {
-        // Fix: Added 'status' property and corrected 'isPublic' to align with the review process.
         const newTemplate: QuizTemplate = {
             id: generateId(),
             title,
@@ -63,14 +64,16 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
             isOfficial: false,
             createdAt: new Date().toISOString(),
             status: 'pending', // Set status to pending for admin review
+            // FIX: Added missing imageUrl property to match QuizTemplate type.
+            imageUrl: '',
         };
         setQuizTemplates(prev => [...prev, newTemplate]);
         alert("Your quiz has been submitted for review by an admin!");
       }
   }
 
-  if (!creatorProfile || !sessionId) {
-    return <Card><p>Generating your room...</p></Card>;
+  if (!creatorProfile || !invitationCode) {
+    return <Card><p>Generating your invitation code...</p></Card>;
   }
 
   return (
@@ -82,9 +85,11 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
 
       <div className="bg-rose-50 border-2 border-dashed border-rose-200 rounded-lg p-4 mb-6">
         <p className="text-gray-500 text-sm mb-2">Your Invitation Code</p>
-        <p className="text-4xl font-bold text-gray-800 tracking-widest font-mono">
-          {sessionId}
-        </p>
+        <textarea
+          readOnly
+          value={invitationCode}
+          className="w-full h-24 p-2 font-mono text-xs text-center bg-transparent border-none resize-none focus:ring-0"
+        />
       </div>
       
       <Button onClick={handleCopy}>
