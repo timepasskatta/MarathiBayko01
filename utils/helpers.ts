@@ -1,5 +1,3 @@
-
-// FIX: Changed import path to be relative.
 import { SessionData, ResultData } from "../types";
 
 export const generateId = (length: number = 8): string => {
@@ -30,7 +28,7 @@ const streamToUint8Array = async (stream: ReadableStream<Uint8Array>): Promise<U
     return result;
 };
 
-// New, smarter encoder that compresses data to create much shorter codes
+// New, smarter encoder that compresses data and uses URL-safe Base64
 export const encodeObjectToBase64 = async (obj: any): Promise<string> => {
     const jsonString = JSON.stringify(obj);
     const stream = new Blob([jsonString], { type: 'application/json' })
@@ -44,12 +42,24 @@ export const encodeObjectToBase64 = async (obj: any): Promise<string> => {
         binaryString += String.fromCharCode(byte);
     });
 
-    return btoa(binaryString);
+    const base64 = btoa(binaryString);
+    // Make it URL-safe and remove padding for a cleaner look and better resilience
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, ''); 
 };
 
-// New, smarter decoder that decompresses data
+// New, smarter decoder that handles URL-safe Base64 and potential corruption
 export const decodeBase64ToObject = async <T>(base64String: string): Promise<T> => {
-    const binaryString = atob(base64String);
+    // Sanitize input: remove whitespace
+    let processedString = base64String.trim();
+    // Restore URL-safe characters
+    processedString = processedString.replace(/-/g, '+').replace(/_/g, '/');
+
+    // Add padding back. The length must be a multiple of 4 for atob.
+    while (processedString.length % 4) {
+        processedString += '=';
+    }
+
+    const binaryString = atob(processedString); // atob should be safer now.
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);

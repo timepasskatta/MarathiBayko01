@@ -8,9 +8,10 @@ interface PartnerFinishViewProps {
   resultData: ResultData;
   onBackToHome: () => void;
   onViewResults: (data: ResultData) => void;
+  onResultCodeGenerated: (code: string) => void;
 }
 
-const PartnerFinishView: React.FC<PartnerFinishViewProps> = ({ resultData, onBackToHome, onViewResults }) => {
+const PartnerFinishView: React.FC<PartnerFinishViewProps> = ({ resultData, onBackToHome, onViewResults, onResultCodeGenerated }) => {
   const [resultCode, setResultCode] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -19,13 +20,14 @@ const PartnerFinishView: React.FC<PartnerFinishViewProps> = ({ resultData, onBac
       try {
         const encodedData = await encodeObjectToBase64(resultData);
         setResultCode(encodedData);
+        onResultCodeGenerated(encodedData); // Log the first view immediately
       } catch (error) {
         console.error("Error encoding result data:", error);
         setResultCode("Error: Could not generate code.");
       }
     };
     generateCode();
-  }, [resultData]);
+  }, [resultData, onResultCodeGenerated]);
 
   const handleCopy = () => {
     if (resultCode) {
