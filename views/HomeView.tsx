@@ -34,11 +34,11 @@ const HomeView: React.FC<HomeViewProps> = ({ onStartCreator, onStartFromTemplate
       <div className="grid md:grid-cols-2 gap-6">
         <Card className="group hover:shadow-xl transition-shadow flex flex-col p-0 overflow-hidden" onClick={onStartCreator}>
           {siteImages.createQuiz && (
-            <div className="overflow-hidden">
+            <div className="overflow-hidden rounded-t-xl">
               <img src={siteImages.createQuiz} alt="Create a Quiz" className="w-full aspect-[16/9] object-cover transition-transform duration-300 group-hover:scale-105" />
             </div>
           )}
-          <div className="p-4 flex flex-col flex-grow">
+          <div className="p-6 flex flex-col flex-grow">
             <h2 className="text-xl font-bold mb-2">1. Create a New Quiz</h2>
             <p className="text-gray-500 mb-4 flex-grow">Create a personalized quiz and get a code to share with your partner.</p>
             <Button className="w-full mt-auto">Start Creating</Button>
@@ -46,11 +46,11 @@ const HomeView: React.FC<HomeViewProps> = ({ onStartCreator, onStartFromTemplate
         </Card>
         <Card className="flex flex-col p-0 overflow-hidden">
           {siteImages.joinQuiz && (
-            <div className="overflow-hidden">
+            <div className="overflow-hidden rounded-t-xl">
                 <img src={siteImages.joinQuiz} alt="Join a Quiz" className="w-full aspect-[16/9] object-cover" />
             </div>
            )}
-           <div className="p-4 flex flex-col flex-grow">
+           <div className="p-6 flex flex-col flex-grow">
               <h2 className="text-xl font-bold mb-2">2. Got a Code?</h2>
               <p className="text-gray-500 mb-4 flex-grow">Enter an Invitation or Result code here.</p>
               <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-auto">
@@ -75,7 +75,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onStartCreator, onStartFromTemplate
             {officialTemplates.filter(t => t.status === 'approved').map(template => (
                  <Card key={template.id} className="group hover:shadow-xl transition-shadow flex flex-col p-0 overflow-hidden">
                     {template.imageUrl && (
-                      <div className="overflow-hidden">
+                      <div className="overflow-hidden rounded-t-xl">
                         <img 
                           src={template.imageUrl}
                           alt={`${template.title} thumbnail`}
@@ -84,7 +84,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onStartCreator, onStartFromTemplate
                         />
                       </div>
                     )}
-                    <div className="p-4 flex flex-col flex-grow">
+                    <div className="p-6 flex flex-col flex-grow">
                       <h4 className={`font-bold text-lg ${template.isOfficial ? 'text-pink-700' : 'text-gray-800'}`}>{template.title}</h4>
                       <p className="text-sm text-gray-500 mb-2">by {template.creatorName}</p>
                       <p className="text-gray-600 flex-grow">{template.description}</p>

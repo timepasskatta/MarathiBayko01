@@ -1,87 +1,72 @@
+// A simple, URL-safe base64 encoding for objects.
+// In a real app, you might add compression (e.g., with pako) for large objects.
 
-// FIX: Added .ts extension to the import path for 'types' to resolve module loading errors.
-import { SessionData, ResultData } from "../types.ts";
+// FIX: Added imports for SessionData and ResultData types for validation functions.
+import { ResultData, SessionData } from '../types';
 
-export const generateId = (length: number = 8): string => {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+// Encodes an object to a URL-safe Base64 string
+export const encodeObjectToBase64 = (obj: any): string => {
+  try {
+    const jsonString = JSON.stringify(obj);
+    const base64String = btoa(jsonString);
+    // Make it URL-safe
+    return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  } catch (error) {
+    console.error("Failed to encode object:", error);
+    throw new Error("Could not encode data.");
+  }
+};
+
+// Decodes a URL-safe Base64 string back to an object
+export const decodeBase64ToObject = <T>(encodedString: string): T => {
+  try {
+    let base64 = encodedString.replace(/-/g, '+').replace(/_/g, '/');
+    // Pad with '=' signs
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    const jsonString = atob(base64);
+    return JSON.parse(jsonString) as T;
+  } catch (error) {
+    console.error("Failed to decode string:", error);
+    throw new Error("Invalid or corrupt code provided.");
+  }
+};
+
+// Generates a short, random, user-friendly code.
+// e.g., "AB1-CD2"
+export const generateFriendlyCode = (length = 6): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid ambiguous chars like I, O, 0, 1
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  // Add a dash for readability if length is 6
+  if (length === 6) {
+    return `${result.slice(0, 3)}-${result.slice(3)}`;
   }
   return result;
 };
 
-// Helper to read a stream into a Uint8Array, needed for Compression/Decompression Streams
-const streamToUint8Array = async (stream: ReadableStream<Uint8Array>): Promise<Uint8Array> => {
-    const reader = stream.getReader();
-    const chunks: Uint8Array[] = [];
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-    }
-    const totalLength = chunks.reduce((acc, val) => acc + val.length, 0);
-    const result = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const chunk of chunks) {
-        result.set(chunk, offset);
-        offset += chunk.length;
-    }
-    return result;
-};
-
-// New, smarter encoder that compresses data and uses URL-safe Base64
-export const encodeObjectToBase64 = async (obj: any): Promise<string> => {
-    const jsonString = JSON.stringify(obj);
-    const stream = new Blob([jsonString], { type: 'application/json' })
-        .stream()
-        .pipeThrough(new CompressionStream('gzip'));
-    
-    const compressedData = await streamToUint8Array(stream);
-    
-    let binaryString = '';
-    compressedData.forEach(byte => {
-        binaryString += String.fromCharCode(byte);
-    });
-
-    const base64 = btoa(binaryString);
-    // Make it URL-safe and remove padding for a cleaner look and better resilience
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, ''); 
-};
-
-// New, smarter decoder that handles URL-safe Base64 and potential corruption
-export const decodeBase64ToObject = async <T>(base64String: string): Promise<T> => {
-    // Sanitize input: remove whitespace
-    let processedString = base64String.trim();
-    // Restore URL-safe characters
-    processedString = processedString.replace(/-/g, '+').replace(/_/g, '/');
-
-    // Add padding back. The length must be a multiple of 4 for atob.
-    while (processedString.length % 4) {
-        processedString += '=';
-    }
-
-    const binaryString = atob(processedString); // atob should be safer now.
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-
-    const stream = new Blob([bytes])
-        .stream()
-        .pipeThrough(new DecompressionStream('gzip'));
-    
-    const decompressedData = await streamToUint8Array(stream);
-    const jsonString = new TextDecoder().decode(decompressedData);
-    return JSON.parse(jsonString) as T;
-};
-
+// FIX: Added validation function for SessionData to ensure decoded objects match the expected structure.
 export const validateSessionData = (data: any): data is SessionData => {
-    // FIX: Added check for analysisConfig to ensure results page can display analysis text.
-    return data && data.creatorProfile && data.creatorAnswers && data.questionsUsed && data.analysisConfig;
-}
+  return (
+    data &&
+    typeof data.creatorProfile === 'object' && data.creatorProfile !== null &&
+    typeof data.creatorProfile.name === 'string' &&
+    typeof data.creatorAnswers === 'object' && data.creatorAnswers !== null &&
+    Array.isArray(data.questionsUsed) &&
+    typeof data.analysisConfig === 'object' && data.analysisConfig !== null &&
+    typeof data.quizTitle === 'string'
+  );
+};
 
+// FIX: Added validation function for ResultData to ensure decoded objects match the expected structure.
 export const validateResultData = (data: any): data is ResultData => {
-    // FIX: Added check for analysisConfig to ensure results page can display analysis text.
-    return data && data.creatorProfile && data.partnerProfile && data.creatorAnswers && data.partnerAnswers && data.questionsUsed && data.analysisConfig;
-}
+  return (
+    validateSessionData(data) &&
+    typeof data.partnerProfile === 'object' && data.partnerProfile !== null &&
+    typeof data.partnerProfile.name === 'string' &&
+    typeof data.partnerAnswers === 'object' && data.partnerAnswers !== null
+  );
+};

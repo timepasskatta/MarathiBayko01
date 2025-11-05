@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Profile, Answers, Question, QuizTemplate, SessionData, InternalAd } from '../types';
 import { encodeObjectToBase64 } from '../utils/helpers';
 import Button from '../components/Button';
@@ -20,24 +20,28 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
   const [copied, setCopied] = useState<boolean>(false);
   
   useEffect(() => {
-    const sessionData: SessionData = {
-      creatorProfile,
-      creatorAnswers,
-      questionsUsed,
-      analysisConfig: activeTemplate.analysisConfig,
-    };
+    if (creatorProfile && activeTemplate) {
+      const sessionData: SessionData = {
+        creatorProfile,
+        creatorAnswers,
+        questionsUsed,
+        analysisConfig: activeTemplate.analysisConfig,
+        quizTitle: activeTemplate.title,
+      };
 
-    const generateCode = async () => {
-      try {
-        const encodedData = await encodeObjectToBase64(sessionData);
-        setInvitationCode(encodedData);
-      } catch (error) {
-          console.error("Error encoding session data:", error);
-          setInvitationCode("Error: Could not generate code.");
-      }
-    };
-    
-    generateCode();
+      const generateCode = async () => {
+        try {
+          const sanitizedData = JSON.parse(JSON.stringify(sessionData));
+          const encodedData = await encodeObjectToBase64(sanitizedData);
+          setInvitationCode(encodedData);
+        } catch (error) {
+            console.error("Error encoding session data:", error);
+            setInvitationCode("Error: Could not generate code.");
+        }
+      };
+      
+      generateCode();
+    }
   }, [creatorProfile, creatorAnswers, questionsUsed, activeTemplate]);
 
   const handleCopy = () => {
@@ -48,7 +52,7 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
     }
   };
 
-  if (!invitationCode) {
+  if (!creatorProfile || !invitationCode) {
     return <Card><p className="text-center animate-pulse">Generating your invitation code...</p></Card>;
   }
 

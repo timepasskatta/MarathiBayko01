@@ -43,6 +43,7 @@ export interface SessionData {
   creatorAnswers: Answers;
   questionsUsed: Question[];
   analysisConfig: QuizTemplate['analysisConfig'];
+  quizTitle: string;
 }
 
 export interface ResultData extends SessionData {

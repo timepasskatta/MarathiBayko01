@@ -19,7 +19,8 @@ const PartnerFinishView: React.FC<PartnerFinishViewProps> = ({ resultData, onBac
   useEffect(() => {
     const generateCode = async () => {
       try {
-        const encodedData = await encodeObjectToBase64(resultData);
+        const sanitizedData = JSON.parse(JSON.stringify(resultData));
+        const encodedData = await encodeObjectToBase64(sanitizedData);
         setResultCode(encodedData);
         onResultCodeGenerated(encodedData);
       } catch (error) {

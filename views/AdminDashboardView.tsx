@@ -85,14 +85,6 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         setSiteImages(currentSiteImages);
 
         const code = `import { QuizTemplate } from '../types';
-import { initialQuestions } from './questions';
-
-const defaultAnalysis = {
-    range0_25: "It seems like there are quite a few differences in your perspectives. This is a great opportunity to start some interesting conversations and learn more about each other's worlds!",
-    range26_50: "You two have some common ground, but also areas where you see things differently. Exploring these differences can be a fun adventure and a way to grow even closer.",
-    range51_75: "You're on the same wavelength most of the time! You have a solid foundation of understanding. The few differences you have can add a little spice to your relationship.",
-    range76_100: "Wow, it's like you can read each other's minds! Your connection is incredibly strong. You share a deep understanding that is truly special.",
-};
 
 export const officialTemplates: QuizTemplate[] = ${JSON.stringify(templates, null, 2)};
 `;
@@ -217,6 +209,7 @@ interface QuizEditorModalProps { template: QuizTemplate; setTemplate: React.Disp
 const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ template, setTemplate, onClose, onSave }) => {
     if (!template) return null;
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setTemplate(p => p ? { ...p, [e.target.name]: e.target.value } : null);
+    // FIX: Removed unnecessary `|| {}` which was causing a TypeScript type mismatch for the `analysisConfig` object.
     const handleAnalysisChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => setTemplate(p => p ? { ...p, analysisConfig: { ...p.analysisConfig, [e.target.name]: e.target.value }} : null);
     const handleQuestionChange = (qIndex: number, text: string) => setTemplate(p => p ? { ...p, questions: p.questions.map((q, i) => i === qIndex ? {...q, text} : q) } : null);
     const handleOptionChange = (qIndex: number, oIndex: number, value: string) => setTemplate(p => p ? { ...p, questions: p.questions.map((q, i) => i === qIndex ? {...q, options: q.options.map((opt, oi) => oi === oIndex ? value : opt)} : q) } : null);
@@ -237,7 +230,7 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ template, setTemplate
                             <p className="font-bold mb-2 text-gray-700">Question {qIndex + 1}</p>
                             <textarea value={q.text} onChange={e => handleQuestionChange(qIndex, e.target.value)} placeholder="Question text" rows={2} className="w-full p-2 border rounded mb-2"/>
                             <div className="grid grid-cols-2 gap-2">{(q.options || ['', '', '', '']).map((opt, oIndex) => (<input key={oIndex} type="text" value={opt} placeholder={`Option ${oIndex + 1}`} onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)} className="w-full p-2 border rounded"/>))}</div>
-                            <button onClick={() => removeQuestion(qIndex)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-full"><svg xmlns="http://www.w.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
+                            <button onClick={() => removeQuestion(qIndex)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
                         </div>
                     ))}<Button onClick={addQuestion} variant="secondary">Add Question</Button>
                 </div>
