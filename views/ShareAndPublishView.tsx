@@ -12,13 +12,13 @@ interface ShareAndPublishViewProps {
   creatorProfile: Profile | null;
   creatorAnswers: Answers;
   questionsUsed: Question[];
-  onSessionCreated: (session: SessionData) => void;
   setQuizTemplates: React.Dispatch<React.SetStateAction<QuizTemplate[]>>;
   onBack: () => void;
-  internalAd: InternalAd;
+  internalAd?: InternalAd;
+  activeTemplate: QuizTemplate | null;
 }
 
-const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfile, creatorAnswers, questionsUsed, onSessionCreated, setQuizTemplates, onBack, internalAd }) => {
+const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfile, creatorAnswers, questionsUsed, setQuizTemplates, onBack, internalAd, activeTemplate }) => {
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   
@@ -29,20 +29,22 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
   const sessionCreatedRef = useRef(false);
 
   useEffect(() => {
-    if (creatorProfile && !sessionCreatedRef.current) {
+    // FIX: Ensure activeTemplate is available before generating code with analysisConfig.
+    if (creatorProfile && activeTemplate && !sessionCreatedRef.current) {
       sessionCreatedRef.current = true;
       
       const sessionData: SessionData = {
         creatorProfile,
         creatorAnswers,
         questionsUsed,
+        // FIX: Added analysisConfig to session data to be used in results view.
+        analysisConfig: activeTemplate.analysisConfig,
       };
 
       const generateCode = async () => {
         try {
           const encodedData = await encodeObjectToBase64(sessionData);
           setInvitationCode(encodedData);
-          onSessionCreated(sessionData);
         } catch (error) {
             console.error("Error encoding session data:", error);
             setInvitationCode("Error: Could not generate code.");
@@ -51,7 +53,7 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
       
       generateCode();
     }
-  }, [creatorProfile, creatorAnswers, questionsUsed, onSessionCreated]);
+  }, [creatorProfile, creatorAnswers, questionsUsed, activeTemplate]);
 
   const handleCopy = () => {
     if (invitationCode) {
@@ -78,6 +80,8 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
             createdAt: new Date().toISOString(),
             status: 'pending', // Set status to pending for admin review
             imageUrl: '', // Add placeholder for image
+            // FIX: Added missing analysisConfig property to match QuizTemplate type.
+            analysisConfig: activeTemplate?.analysisConfig ?? { range0_25: '', range26_50: '', range51_75: '', range76_100: '' },
         };
         setQuizTemplates(prev => [...prev, newTemplate]);
         setIsSubmitted(true);

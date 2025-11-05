@@ -1,3 +1,4 @@
+
 // FIX: Changed import path to be relative.
 import { SessionData, ResultData } from "../types";
 
@@ -64,9 +65,11 @@ export const decodeBase64ToObject = async <T>(base64String: string): Promise<T> 
 };
 
 export const validateSessionData = (data: any): data is SessionData => {
-    return data && data.creatorProfile && data.creatorAnswers && data.questionsUsed;
+    // FIX: Added check for analysisConfig to ensure results page can display analysis text.
+    return data && data.creatorProfile && data.creatorAnswers && data.questionsUsed && data.analysisConfig;
 }
 
 export const validateResultData = (data: any): data is ResultData => {
-    return data && data.creatorProfile && data.partnerProfile && data.creatorAnswers && data.partnerAnswers && data.questionsUsed;
+    // FIX: Added check for analysisConfig to ensure results page can display analysis text.
+    return data && data.creatorProfile && data.partnerProfile && data.creatorAnswers && data.partnerAnswers && data.questionsUsed && data.analysisConfig;
 }

@@ -17,7 +17,7 @@ interface HomeViewProps {
   adsEnabled: boolean;
   adSenseConfig: AdSenseConfig;
   onViewResults: (data: ResultData) => void;
-  internalAd: InternalAd;
+  internalAd?: InternalAd;
 }
 
 const HomeView: React.FC<HomeViewProps> = ({ quizTemplates, onStartCreator, onStartFromTemplate, onJoinQuiz, onAdminLogin, adsEnabled, adSenseConfig, onViewResults, internalAd }) => {

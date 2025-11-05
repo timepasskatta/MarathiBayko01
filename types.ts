@@ -1,36 +1,19 @@
 
-export interface Profile {
-  name: string;
-  gender: 'Male' | 'Female' | 'Other';
-  age: number;
-  relationshipType: 'Wife' | 'Husband' | 'Girlfriend' | 'Boyfriend' | 'Crush' | 'Friend' | 'Fiance';
-  bio: string;
-  favMarathiWord: string;
-}
-
 export interface Question {
-  id: number | string;
+  id: number;
   category: string;
   text: string;
   options: string[];
   active: boolean;
 }
 
-export type Answers = Record<Question['id'], string>;
-
-export interface SessionData {
-  creatorProfile: Profile;
-  creatorAnswers: Answers;
-  questionsUsed: Question[];
+export interface Profile {
+  name: string;
 }
 
-export interface ResultData {
-  creatorProfile: Profile;
-  partnerProfile: Profile;
-  creatorAnswers: Answers;
-  partnerAnswers: Answers;
-  questionsUsed: Question[];
-}
+export type Answers = {
+  [questionId: number]: string;
+};
 
 export interface QuizTemplate {
     id: string;
@@ -42,35 +25,52 @@ export interface QuizTemplate {
     isOfficial: boolean;
     createdAt: string;
     status: 'pending' | 'approved' | 'rejected';
-    imageUrl?: string;
+    imageUrl: string;
+    analysisConfig: {
+      range0_25: string;
+      range26_50: string;
+      range51_75: string;
+      range76_100: string;
+    };
 }
+
+export interface SessionData {
+  creatorProfile: Profile;
+  creatorAnswers: Answers;
+  questionsUsed: Question[];
+  analysisConfig: QuizTemplate['analysisConfig'];
+}
+
+export interface ResultData extends SessionData {
+  partnerProfile: Profile;
+  partnerAnswers: Answers;
+}
+
+export type AppState =
+  | { view: 'home' }
+  | { view: 'creator_profile_setup' }
+  | { view: 'question_choice' }
+  | { view: 'custom_question_editor' }
+  | { view: 'creator_questionnaire' }
+  | { view: 'share' }
+  | { view: 'partner_profile_setup' }
+  | { view: 'partner_questionnaire' }
+  | { view: 'partner_finish'; resultData: ResultData }
+  | { view: 'results' }
+  | { view: 'admin_login' }
+  | { view: 'admin_dashboard' }
+  | { view: 'static_page'; page: 'about' | 'contact' | 'privacy' | 'terms' };
 
 export interface AdSenseConfig {
     enabled: boolean;
     clientId: string;
     adSlotId: string;
+    verificationCode: string;
 }
 
 export interface InternalAd {
     enabled: boolean;
     imageUrl: string;
     redirectUrl: string;
-}
-
-export type AppView = 
-  | 'home'
-  | 'creator_profile_setup'
-  | 'question_choice'
-  | 'custom_question_editor'
-  | 'creator_questionnaire'
-  | 'share'
-  | 'partner_profile_setup'
-  | 'partner_questionnaire'
-  | 'partner_finish'
-  | 'results'
-  | 'admin_login'
-  | 'admin_dashboard';
-
-export interface AppState {
-    view: AppView;
+    title: string;
 }

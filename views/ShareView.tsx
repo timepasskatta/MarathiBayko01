@@ -28,6 +28,8 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
         creatorProfile,
         creatorAnswers,
         questionsUsed,
+        // HACK: Using default analysis for this component as template info is not available.
+        analysisConfig: { range0_25: '', range26_50: '', range51_75: '', range76_100: '' },
       };
 
       const generateCode = async () => {
@@ -66,6 +68,8 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
             status: 'pending', // Set status to pending for admin review
             // FIX: Added missing imageUrl property to match QuizTemplate type.
             imageUrl: '',
+            // FIX: Added missing analysisConfig property to match QuizTemplate type.
+            analysisConfig: { range0_25: '', range26_50: '', range51_75: '', range76_100: '' },
         };
         setQuizTemplates(prev => [...prev, newTemplate]);
         alert("Your quiz has been submitted for review by an admin!");
