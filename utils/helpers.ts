@@ -49,7 +49,8 @@ export const generateFriendlyCode = (length = 6): string => {
 };
 
 // FIX: Added validation function for SessionData to ensure decoded objects match the expected structure.
-export const validateSessionData = (data: any): data is SessionData => {
+// FIX: Changed return type to boolean to prevent incorrect type narrowing in `validateResultData`.
+export const validateSessionData = (data: any): boolean => {
   return (
     data &&
     typeof data.creatorProfile === 'object' && data.creatorProfile !== null &&

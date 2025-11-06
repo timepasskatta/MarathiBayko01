@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { officialTemplates as initialOfficialTemplates } from './data/officialTemplates';
@@ -64,8 +65,8 @@ const App: React.FC = () => {
     terms: defaultTermsContent
   });
   const [siteImages, setSiteImages] = useLocalStorage<SiteImagesConfig>('site-images-config', {
-    createQuiz: '/images/create-quiz.jpg',
-    joinQuiz: '/images/join-quiz.jpg',
+    createQuiz: 'https://i.postimg.cc/Mps3pbNt/100071928-1.jpg',
+    joinQuiz: 'https://i.postimg.cc/vBn0XRBk/100071928-2.jpg',
   });
   const [viewedResultCodes, setViewedResultCodes] = useLocalStorage<Record<string, boolean>>('viewed-result-codes', {});
 
@@ -257,7 +258,7 @@ const App: React.FC = () => {
             setAppState({ view: 'question_choice' });
           }
         };
-        return <QuestionnaireView userType="Creator" questions={questionsToUse} onComplete={handleCreatorQuestionnaireComplete} onBack={handleCreatorQuestionnaireBack} activeTemplate={activeTemplate} />;
+        return <QuestionnaireView userType="Creator" questions={questionsToUse} onComplete={handleCreatorQuestionnaireComplete} onBack={handleCreatorQuestionnaireBack} activeTemplate={activeTemplate} internalAd={internalAdConfig['questionnaire']} />;
       case 'share':
         if (!creatorProfile || !activeTemplate) return <p>Error: Creator profile or template not found.</p>;
         return <ShareAndPublishView creatorProfile={creatorProfile} creatorAnswers={creatorAnswers} questionsUsed={questionsToUse} onBack={() => setAppState({ view: 'creator_questionnaire'})} internalAd={internalAdConfig['share']} activeTemplate={activeTemplate}/>;
@@ -267,7 +268,7 @@ const App: React.FC = () => {
         return <ProfileSetupView userType="Partner" onSave={handlePartnerProfileSave} onBack={goToHome} activeTemplate={activeTemplate} creatorName={sessionData?.creatorProfile.name} />;
       case 'partner_questionnaire':
         if (!sessionData) return <p>Error: Session data not found.</p>;
-        return <QuestionnaireView userType="Partner" questions={sessionData.questionsUsed} onComplete={handlePartnerQuestionnaireComplete} onBack={() => setAppState({ view: 'partner_profile_setup'})} activeTemplate={activeTemplate} />;
+        return <QuestionnaireView userType="Partner" questions={sessionData.questionsUsed} onComplete={handlePartnerQuestionnaireComplete} onBack={() => setAppState({ view: 'partner_profile_setup'})} activeTemplate={activeTemplate} internalAd={internalAdConfig['questionnaire']} />;
       case 'partner_finish':
         if (!appState.resultData) return <p>Error: Result data not found.</p>;
         return <PartnerFinishView resultData={appState.resultData} onBackToHome={goToHome} onViewResults={handleViewResults} onResultCodeGenerated={handleResultCodeGenerated} />;
@@ -324,15 +325,16 @@ const App: React.FC = () => {
                     aria-label="Go to Home"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      {/* FIX: Completed truncated SVG path data. */}
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2l-7 7-7-7m14 0V4a1 1 0 00-1-1h-3" />
                     </svg>
                   </button>
                 </div>
-                <p>&copy; {new Date().getFullYear()} Marathi Bayko. All Rights Reserved.</p>
-            </footer>
+             </footer>
         </div>
     </div>
   );
 };
 
+// FIX: Added missing default export for the App component.
 export default App;

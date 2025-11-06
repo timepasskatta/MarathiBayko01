@@ -1,5 +1,4 @@
-// FIX: Added .ts extension to fix module resolution issue.
-import { QuizTemplate } from '../types.ts';
+import { QuizTemplate } from '../types';
 import { initialQuestions } from './questions';
 
 const defaultAnalysis = {
