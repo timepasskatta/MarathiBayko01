@@ -1,5 +1,5 @@
-import { QuizTemplate } from '../types.ts';
-import { initialQuestions } from './questions.ts';
+import { QuizTemplate } from '../types';
+import { initialQuestions } from './questions';
 
 const defaultAnalysis = {
     range0_25: "It seems like there are quite a few differences in your perspectives. This is a great opportunity to start some interesting conversations and learn more about each other's worlds!",

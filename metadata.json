@@ -1,5 +1,5 @@
 {
   "name": "Marathi Bayko – Real Relationship Partner Checker",
-  "description": "A fun, static web application to check compatibility between partners or friends. Users can create custom quizzes, share them via an invitation code, and get a detailed match report.",
+  "description": "A fun, static web application to check compatibility between partners or friends. Users can create custom quizzes, share them via a unique link, and get a detailed, self-hosted match report.",
   "requestFramePermissions": []
 }

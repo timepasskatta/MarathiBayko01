@@ -1,17 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
-// FIX: Added .ts extension to fix module resolution issue.
-import { SessionData, InternalAd } from '../types.ts';
-// FIX: Added .ts extension to fix module resolution issue.
-import { encodeObjectToBase64 } from '../utils/helpers.ts';
-// FIX: Added .tsx extension to fix module resolution issue.
-import Card from '../components/Card.tsx';
-// FIX: Added .tsx extension to fix module resolution issue.
-import Button from '../components/Button.tsx';
-// FIX: Added .tsx extension to fix module resolution issue.
-import BackButton from '../components/BackButton.tsx';
-// FIX: Added .tsx extension to fix module resolution issue.
-import InternalAdBanner from '../components/InternalAdBanner.tsx';
+import { SessionData, InternalAd } from '../types';
+import { encodeObjectToBase64 } from '../utils/helpers';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import BackButton from '../components/BackButton';
+import InternalAdBanner from '../components/InternalAdBanner';
 
 interface ShareAndPublishViewProps {
   sessionData: SessionData;
@@ -21,47 +14,59 @@ interface ShareAndPublishViewProps {
 
 const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ sessionData, onBack, internalAd }) => {
   const [shareLink, setShareLink] = useState('');
-  const [copySuccess, setCopySuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
-    const code = encodeObjectToBase64(sessionData);
-    const link = `${window.location.origin}${window.location.pathname}#/session/${code}`;
-    setShareLink(link);
+    const generateLink = async () => {
+      try {
+        const encodedData = await encodeObjectToBase64(sessionData);
+        const link = `${window.location.origin}${window.location.pathname}#/session/${encodedData}`;
+        setShareLink(link);
+      } catch (error) {
+        console.error("Failed to generate share link:", error);
+        setShareLink("Error generating link. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    generateLink();
   }, [sessionData]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(shareLink);
-    setCopySuccess('Link copied to clipboard!');
-    setTimeout(() => setCopySuccess(''), 2000);
+    navigator.clipboard.writeText(shareLink).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    });
   };
 
   return (
     <div className="space-y-6">
       <Card className="relative pt-12 text-center">
         <BackButton onClick={onBack} />
-        <h2 className="text-2xl font-bold mb-2">You're All Set!</h2>
-        <p className="text-gray-500 mb-6">Now, share this link with your partner so they can answer the questions.</p>
-        
-        <div className="bg-rose-50 p-4 rounded-lg">
-          <input
-            type="text"
+        <h2 className="text-2xl font-bold mb-4">✅ Your Quiz is Ready!</h2>
+        <p className="text-gray-600 mb-6">
+          Now, copy the special link below and send it to your partner. They'll use it to start the quiz.
+        </p>
+
+        <div className="bg-rose-50 border-2 border-dashed border-rose-200 rounded-lg p-4 mb-6">
+          <p className="text-gray-500 text-sm mb-2">Your Magic Invitation Link</p>
+          <textarea
             readOnly
-            value={shareLink}
-            className="w-full p-2 border rounded-md text-center text-gray-600 bg-white"
+            className="w-full h-32 sm:h-24 p-2 font-mono text-xs text-gray-600 bg-transparent border-none focus:ring-0 resize-none text-center"
+            value={isLoading ? 'Generating your link...' : shareLink}
           />
         </div>
-
-        <div className="mt-4">
-          <Button onClick={handleCopy}>
-            {copySuccess ? 'Copied!' : 'Copy Link'}
-          </Button>
-        </div>
-        {copySuccess && <p className="text-green-500 text-sm mt-2">{copySuccess}</p>}
+        
+        <Button onClick={handleCopy} disabled={isLoading || !shareLink}>
+          {isCopied ? 'Copied to Clipboard!' : 'Copy Magic Link'}
+        </Button>
+         <p className="text-xs text-gray-400 mt-4">
+            Pro Tip: After your partner completes the quiz, ask them to send you a screenshot of the results page!
+        </p>
       </Card>
+      
       <InternalAdBanner ad={internalAd} />
-      <div className="text-center">
-          <Button onClick={onBack} variant="secondary">Back to Home</Button>
-      </div>
     </div>
   );
 };

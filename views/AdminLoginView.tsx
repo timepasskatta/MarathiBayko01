@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Button from '../components/Button.tsx';
-import Card from '../components/Card.tsx';
-import BackButton from '../components/BackButton.tsx';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import BackButton from '../components/BackButton';
 
 interface AdminLoginViewProps {
   onLoginSuccess: () => void;
@@ -15,9 +15,9 @@ const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onLoginSuccess, onBack 
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Use environment variables for credentials with a fallback for local dev
-    const adminUser = process.env.ADMIN_USERNAME || 'timepasskattaofficial@gmail.com';
-    const adminPass = process.env.ADMIN_PASSWORD || 'Vaibhavvaibhav@3601';
+    
+    const adminUser = 'timepasskattaofficial@gmail.com';
+    const adminPass = 'Vaibhavvaibhav@3601';
 
     if (username === adminUser && password === adminPass) {
       onLoginSuccess();

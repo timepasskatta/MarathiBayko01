@@ -1,115 +1,139 @@
-
 import React, { useMemo } from 'react';
-// FIX: Added .ts extension to fix module resolution issue.
-import { ResultData, InternalAd } from '../types.ts';
-// FIX: Added .tsx extension to fix module resolution issue.
-import Button from '../components/Button.tsx';
-// FIX: Added .tsx extension to fix module resolution issue.
-import Card from '../components/Card.tsx';
-// FIX: Added .tsx extension to fix module resolution issue.
-import CircularProgressBar from '../components/CircularProgressBar.tsx';
-// FIX: Added .tsx extension to fix module resolution issue.
-import Confetti from '../components/Confetti.tsx';
-// FIX: Added .tsx extension to fix module resolution issue.
-import InternalAdBanner from '../components/InternalAdBanner.tsx';
+import { ResultData, AdSenseConfig, InternalAd } from '../types';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import CircularProgressBar from '../components/CircularProgressBar';
+import Confetti from '../components/Confetti';
+import AdBanner from '../components/AdBanner';
+import InternalAdBanner from '../components/InternalAdBanner';
 
 interface ResultsViewProps {
   resultData: ResultData;
   onBackToHome: () => void;
   internalAdConfig: Record<string, InternalAd>;
+  adSenseConfig: AdSenseConfig;
 }
 
-const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, internalAdConfig }) => {
-  const { creatorProfile, partnerProfile, creatorAnswers, partnerAnswers, questionsUsed, analysisConfig, isSecondAttempt } = resultData;
-  
-  const score = useMemo(() => {
-    const totalQuestions = questionsUsed.length;
-    if (totalQuestions === 0) return 0;
+const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, internalAdConfig, adSenseConfig }) => {
 
-    let matchedAnswers = 0;
-    questionsUsed.forEach(q => {
-      if (creatorAnswers[q.id] && partnerAnswers[q.id] && creatorAnswers[q.id] === partnerAnswers[q.id]) {
-        matchedAnswers++;
+  const {
+    creatorProfile,
+    partnerProfile,
+    creatorAnswers,
+    partnerAnswers,
+    questionsUsed,
+    quizTitle,
+    analysisConfig,
+    isSecondAttempt
+  } = resultData;
+
+  const { score, matches, total, analysisText } = useMemo(() => {
+    const activeQuestions = questionsUsed.filter(q => q.active);
+    let matchCount = 0;
+    
+    activeQuestions.forEach(q => {
+      if (creatorAnswers[q.id] && creatorAnswers[q.id] === partnerAnswers[q.id]) {
+        matchCount++;
       }
     });
-    return (matchedAnswers / totalQuestions) * 100;
-  }, [creatorAnswers, partnerAnswers, questionsUsed]);
 
-  const analysisText = useMemo(() => {
-    if (score <= 25) return analysisConfig.range0_25;
-    if (score <= 50) return analysisConfig.range26_50;
-    if (score <= 75) return analysisConfig.range51_75;
-    return analysisConfig.range76_100;
-  }, [score, analysisConfig]);
+    const totalQuestions = activeQuestions.length;
+    const compatibilityScore = totalQuestions > 0 ? (matchCount / totalQuestions) * 100 : 0;
+    
+    let text = "Here's how you matched!";
+    if (analysisConfig) {
+        if (compatibilityScore <= 25) text = analysisConfig.range0_25;
+        else if (compatibilityScore <= 50) text = analysisConfig.range26_50;
+        else if (compatibilityScore <= 75) text = analysisConfig.range51_75;
+        else text = analysisConfig.range76_100;
+    }
+
+    return {
+      score: compatibilityScore,
+      matches: matchCount,
+      total: totalQuestions,
+      analysisText: text || "It's great to see your results!",
+    };
+  }, [resultData]);
+
+  const showConfetti = score > 75;
 
   return (
     <div className="space-y-6">
-      {score > 75 && !isSecondAttempt && <Confetti />}
+      {showConfetti && <Confetti />}
+      
+      {isSecondAttempt && (
+          <Card className="bg-yellow-100 border-yellow-300 text-yellow-800 text-center">
+              <p className="font-bold flex items-center justify-center gap-2">
+                <span className="text-xl">⚠️</span>
+                <span>Warning: Second Attempt</span>
+              </p>
+              <p className="text-sm mt-1">This result has been viewed before. This might be a second attempt after seeing the answers.</p>
+          </Card>
+      )}
+
       <Card className="text-center">
-        <h2 className="text-3xl font-bold text-pink-600 mb-2">Your Compatibility Score</h2>
-        <p className="text-gray-500 mb-6">{creatorProfile.name} &amp; {partnerProfile.name}</p>
+        <h2 className="text-2xl md:text-3xl font-bold mb-2">{quizTitle} Results</h2>
+        <p className="text-lg text-gray-600 mb-6">{creatorProfile.name} & {partnerProfile.name}</p>
         
-        <div className="my-8">
+        <div className="my-6">
             <CircularProgressBar progress={score} />
         </div>
         
-        <p className="text-lg text-gray-700 italic px-4">{analysisText}</p>
-        {isSecondAttempt && (
-            <p className="mt-4 text-sm text-amber-600 bg-amber-100 p-2 rounded-md">Note: This result link has been viewed before.</p>
-        )}
+        <p className="text-lg font-semibold mt-4">You matched on {matches} out of {total} questions.</p>
+        
+        <AdBanner clientId={adSenseConfig.clientId} adSlotId={adSenseConfig.adSlotId} />
+
+        <p className="text-gray-600 mt-4 max-w-lg mx-auto italic">"{analysisText}"</p>
       </Card>
       
-      <InternalAdBanner ad={internalAdConfig['results']} />
+      <InternalAdBanner ad={internalAdConfig['results_middle_1x1']} />
 
       <Card>
-        <h3 className="text-xl font-bold text-center mb-6">Sweet Words</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
-            <div className="bg-rose-50 p-4 rounded-lg">
-                <p className="font-semibold text-pink-600">{creatorProfile.name} said about {partnerProfile.name}:</p>
-                <p className="mt-2 italic">"{creatorProfile.goodThingAboutPartner}"</p>
-            </div>
-             <div className="bg-rose-50 p-4 rounded-lg">
-                <p className="font-semibold text-pink-600">{partnerProfile.name} said about {creatorProfile.name}:</p>
-                <p className="mt-2 italic">"{partnerProfile.goodThingAboutPartner}"</p>
-            </div>
+        <h3 className="text-xl font-bold text-center mb-6">Your Thoughts About Each Other</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="p-4 rounded-lg bg-rose-50 border border-rose-200">
+            <p className="font-bold text-pink-600 mb-2">{creatorProfile.name}'s thoughts on {partnerProfile.name}:</p>
+            <p className="text-gray-700 mb-2"><strong>A wonderful quality:</strong> {creatorProfile.goodThingAboutPartner}</p>
+            <p className="text-gray-700"><strong>A suggestion for growth:</strong> {creatorProfile.partnerImprovement}</p>
+          </div>
+           <div className="p-4 rounded-lg bg-rose-50 border border-rose-200">
+            <p className="font-bold text-pink-600 mb-2">{partnerProfile.name}'s thoughts on {creatorProfile.name}:</p>
+            <p className="text-gray-700 mb-2"><strong>A wonderful quality:</strong> {partnerProfile.goodThingAboutPartner}</p>
+            <p className="text-gray-700"><strong>A suggestion for growth:</strong> {partnerProfile.partnerImprovement}</p>
+          </div>
         </div>
       </Card>
 
       <Card>
         <h3 className="text-xl font-bold text-center mb-6">Answer Breakdown</h3>
-        <ul className="space-y-4">
-          {questionsUsed.map((q, index) => {
-            const creatorAns = creatorAnswers[q.id];
-            const partnerAns = partnerAnswers[q.id];
-            const isMatch = creatorAns === partnerAns;
+        <div className="space-y-4">
+          {questionsUsed.filter(q => q.active).map((question, index) => {
+            const creatorAnswer = creatorAnswers[question.id];
+            const partnerAnswer = partnerAnswers[question.id];
+            const isMatch = creatorAnswer === partnerAnswer;
 
             return (
-              <li key={q.id} className="p-4 bg-rose-50 rounded-lg">
-                <p className="font-semibold text-gray-800 mb-3">{index + 1}. {q.text}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  <div className="flex items-center">
-                     <span className="font-bold w-24">{creatorProfile.name}:</span>
-                     <span>{creatorAns || 'No answer'}</span>
+              <div key={question.id} className="p-4 border rounded-lg bg-gray-50">
+                <p className="font-semibold text-gray-800 mb-3">Q{index + 1}: {question.text}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div className={`p-2 rounded-md ${isMatch ? 'bg-green-100' : 'bg-red-100'}`}>
+                    <p className="font-bold text-gray-700">{creatorProfile.name}'s Answer:</p>
+                    <p className="text-gray-600">{creatorAnswer || 'No answer'}</p>
                   </div>
-                  <div className="flex items-center">
-                    <span className="font-bold w-24">{partnerProfile.name}:</span>
-                    <span className={`flex items-center ${isMatch ? 'text-green-600' : 'text-red-500'}`}>
-                        {partnerAns || 'No answer'}
-                        {isMatch ? 
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg> :
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                        }
-                    </span>
+                  <div className={`p-2 rounded-md ${isMatch ? 'bg-green-100' : 'bg-red-100'}`}>
+                    <p className="font-bold text-gray-700">{partnerProfile.name}'s Guess:</p>
+                    <p className="text-gray-600">{partnerAnswer || 'No answer'}</p>
                   </div>
                 </div>
-              </li>
+              </div>
             );
           })}
-        </ul>
+        </div>
       </Card>
-      
+
       <div className="text-center">
-        <Button onClick={onBackToHome} variant="secondary">Create a New Quiz</Button>
+          <Button onClick={onBackToHome} variant="secondary">Create a New Quiz</Button>
       </div>
     </div>
   );

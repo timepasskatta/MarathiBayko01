@@ -1,48 +1,70 @@
-
-import React from 'react';
-// FIX: Added .ts extension to fix module resolution issue.
-import { ResultData } from '../types.ts';
-// FIX: Added .ts extension to fix module resolution issue.
-import { encodeObjectToBase64 } from '../utils/helpers.ts';
-// FIX: Added .tsx extension to fix module resolution issue.
-import Card from '../components/Card.tsx';
-// FIX: Added .tsx extension to fix module resolution issue.
-import Button from '../components/Button.tsx';
-// FIX: Added .tsx extension to fix module resolution issue.
-import Confetti from '../components/Confetti.tsx';
+import React, { useState, useEffect } from 'react';
+import { ResultData } from '../types';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import BackButton from '../components/BackButton';
+import { encodeObjectToBase64 } from '../utils/helpers';
 
 interface PartnerFinishViewProps {
   resultData: ResultData;
-  onResultCodeGenerated: (code: string) => void;
+  onBackToHome: () => void;
 }
 
-const PartnerFinishView: React.FC<PartnerFinishViewProps> = ({ resultData, onResultCodeGenerated }) => {
-  
-  const handleShowResults = () => {
-    try {
-      const code = encodeObjectToBase64(resultData);
-      onResultCodeGenerated(code);
-    } catch (error) {
-      console.error("Failed to generate result code:", error);
-      alert("There was an error generating the results link. Please try again.");
+const PartnerFinishView: React.FC<PartnerFinishViewProps> = ({ resultData, onBackToHome }) => {
+  const [resultCode, setResultCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState<boolean>(false);
+
+  useEffect(() => {
+    const generateCode = async () => {
+      try {
+        const encodedData = await encodeObjectToBase64(resultData);
+        setResultCode(encodedData);
+      } catch (error) {
+        console.error("Error encoding result data:", error);
+        setResultCode("Error: Could not generate code.");
+      }
+    };
+    generateCode();
+  }, [resultData]);
+
+  const handleCopy = () => {
+    if (resultCode) {
+      navigator.clipboard.writeText(resultCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
   return (
-    <>
-      <Confetti />
-      <Card className="text-center">
-        <h2 className="text-3xl font-bold text-pink-600 mb-4">You've finished!</h2>
-        <p className="text-gray-600 mb-2">Thank you for taking the time to answer the questions.</p>
-        <p className="text-gray-600 mb-8">Click the button below to see how well you and {resultData.creatorProfile.name} know each other!</p>
-        
-        <div className="animate-pulse">
-            <Button onClick={handleShowResults}>
-                See Your Results!
-            </Button>
-        </div>
-      </Card>
-    </>
+    <Card className="text-center relative">
+      <BackButton onClick={onBackToHome} />
+      <h2 className="text-2xl font-bold mb-4">🎉 You're All Done!</h2>
+      <p className="text-gray-600 mb-6">
+        You've successfully answered all the questions. Now, copy the Result Code below and share it back with your partner.
+        You can both use this code on the home page to view your combined results.
+      </p>
+
+      <div className="bg-rose-50 border-2 border-dashed border-rose-200 rounded-lg p-4 mb-6">
+        <p className="text-gray-500 text-sm mb-2">Your Final Result Code</p>
+        {resultCode ? (
+            <textarea
+            readOnly
+            className="w-full h-24 p-2 font-mono text-xs text-gray-600 bg-transparent border-none focus:ring-0 resize-none text-center"
+            value={resultCode}
+          />
+        ) : (
+            <p className="text-center animate-pulse">Generating your result code...</p>
+        )}
+      </div>
+      
+      <Button onClick={handleCopy} disabled={!resultCode}>
+        {copied ? 'Copied!' : 'Copy Result Code'}
+      </Button>
+
+       <div className="mt-8">
+        <Button onClick={onBackToHome} variant="secondary">Back to Home Page</Button>
+      </div>
+    </Card>
   );
 };
 

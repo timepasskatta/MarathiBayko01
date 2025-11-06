@@ -1,74 +1,79 @@
-// A simple, URL-safe base64 encoding for objects.
-// In a real app, you might add compression (e.g., with pako) for large objects.
+import { SessionData, ResultData } from "../types";
 
-// FIX: Added imports for SessionData and ResultData types for validation functions.
-// FIX: Added .ts extension to the import path for 'types' to resolve module loading errors.
-import { ResultData, SessionData } from '../types.ts';
-
-// Encodes an object to a URL-safe Base64 string
-export const encodeObjectToBase64 = (obj: any): string => {
-  try {
-    const jsonString = JSON.stringify(obj);
-    const base64String = btoa(jsonString);
-    // Make it URL-safe
-    return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  } catch (error) {
-    console.error("Failed to encode object:", error);
-    throw new Error("Could not encode data.");
-  }
-};
-
-// Decodes a URL-safe Base64 string back to an object
-export const decodeBase64ToObject = <T>(encodedString: string): T => {
-  try {
-    let base64 = encodedString.replace(/-/g, '+').replace(/_/g, '/');
-    // Pad with '=' signs
-    while (base64.length % 4) {
-      base64 += '=';
+// Helper to read a stream into a Uint8Array, needed for Compression/Decompression Streams
+const streamToUint8Array = async (stream: ReadableStream<Uint8Array>): Promise<Uint8Array> => {
+    const reader = stream.getReader();
+    const chunks: Uint8Array[] = [];
+    let totalLength = 0;
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        totalLength += value.length;
     }
-    const jsonString = atob(base64);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+    }
+    return result;
+};
+
+// New, smarter encoder that compresses data and uses URL-safe Base64
+export const encodeObjectToBase64 = async (obj: any): Promise<string> => {
+    // Sanitize the object to remove any non-serializable parts
+    const sanitizedObj = JSON.parse(JSON.stringify(obj));
+    const jsonString = JSON.stringify(sanitizedObj);
+
+    const stream = new Blob([jsonString], { type: 'application/json' })
+        .stream()
+        .pipeThrough(new CompressionStream('gzip'));
+    
+    const compressedData = await streamToUint8Array(stream);
+    
+    let binaryString = '';
+    compressedData.forEach(byte => {
+        binaryString += String.fromCharCode(byte);
+    });
+
+    return btoa(binaryString)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+};
+
+// New, smarter decoder that handles URL-safe Base64 and decompresses data
+export const decodeBase64ToObject = async <T>(base64String: string): Promise<T> => {
+    let sanitizedString = base64String.trim().replace(/-/g, '+').replace(/_/g, '/');
+    while (sanitizedString.length % 4) {
+        sanitizedString += '=';
+    }
+    
+    const binaryString = atob(sanitizedString);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    const stream = new Blob([bytes])
+        .stream()
+        .pipeThrough(new DecompressionStream('gzip'));
+    
+    const decompressedData = await streamToUint8Array(stream);
+    const jsonString = new TextDecoder().decode(decompressedData);
     return JSON.parse(jsonString) as T;
-  } catch (error) {
-    console.error("Failed to decode string:", error);
-    throw new Error("Invalid or corrupt code provided.");
-  }
 };
 
-// Generates a short, random, user-friendly code.
-// e.g., "AB1-CD2"
-export const generateFriendlyCode = (length = 6): string => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid ambiguous chars like I, O, 0, 1
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  // Add a dash for readability if length is 6
-  if (length === 6) {
-    return `${result.slice(0, 3)}-${result.slice(3)}`;
-  }
-  return result;
+// FIX: Add missing 'generateId' function.
+export const generateId = (): string => {
+  return `id_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 };
 
-// FIX: Added validation function for SessionData to ensure decoded objects match the expected structure.
-// FIX: Changed return type to boolean to prevent incorrect type narrowing in `validateResultData`.
-export const validateSessionData = (data: any): boolean => {
-  return (
-    data &&
-    typeof data.creatorProfile === 'object' && data.creatorProfile !== null &&
-    typeof data.creatorProfile.name === 'string' &&
-    typeof data.creatorAnswers === 'object' && data.creatorAnswers !== null &&
-    Array.isArray(data.questionsUsed) &&
-    typeof data.analysisConfig === 'object' && data.analysisConfig !== null &&
-    typeof data.quizTitle === 'string'
-  );
-};
+export const validateSessionData = (data: any): data is SessionData => {
+    return data && data.creatorProfile && data.creatorAnswers && data.questionsUsed && data.analysisConfig && data.quizTitle;
+}
 
-// FIX: Added validation function for ResultData to ensure decoded objects match the expected structure.
 export const validateResultData = (data: any): data is ResultData => {
-  return (
-    validateSessionData(data) &&
-    typeof data.partnerProfile === 'object' && data.partnerProfile !== null &&
-    typeof data.partnerProfile.name === 'string' &&
-    typeof data.partnerAnswers === 'object' && data.partnerAnswers !== null
-  );
-};
+    return validateSessionData(data) && 'partnerProfile' in data && 'partnerAnswers' in data;
+}
