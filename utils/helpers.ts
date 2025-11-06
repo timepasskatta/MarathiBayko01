@@ -2,7 +2,8 @@
 // In a real app, you might add compression (e.g., with pako) for large objects.
 
 // FIX: Added imports for SessionData and ResultData types for validation functions.
-import { ResultData, SessionData } from '../types';
+// FIX: Added .ts extension to the import path for 'types' to resolve module loading errors.
+import { ResultData, SessionData } from '../types.ts';
 
 // Encodes an object to a URL-safe Base64 string
 export const encodeObjectToBase64 = (obj: any): string => {

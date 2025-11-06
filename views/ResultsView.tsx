@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
-import { ResultData, InternalAd } from '../types';
-import Button from '../components/Button';
-import Card from '../components/Card';
-import CircularProgressBar from '../components/CircularProgressBar';
-import Confetti from '../components/Confetti';
-import InternalAdBanner from '../components/InternalAdBanner';
+import { ResultData, InternalAd } from '../types.ts';
+import Button from '../components/Button.tsx';
+import Card from '../components/Card.tsx';
+import CircularProgressBar from '../components/CircularProgressBar.tsx';
+import Confetti from '../components/Confetti.tsx';
+import InternalAdBanner from '../components/InternalAdBanner.tsx';
 
 interface ResultsViewProps {
   resultData: ResultData;
@@ -20,7 +20,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
     partnerAnswers,
     questionsUsed,
     analysisConfig,
-    isSecondAttempt,
+    isSecondAttempt
   } = resultData;
 
   const { score, matches, total, analysisText } = useMemo(() => {
@@ -34,7 +34,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
     });
 
     const totalQuestions = activeQuestions.length;
-    const compatibilityScore = totalQuestions > 0 ? Math.round((matchCount / totalQuestions) * 100) : 0;
+    const compatibilityScore = totalQuestions > 0 ? (matchCount / totalQuestions) * 100 : 0;
     
     let text = "Here's how you matched!";
     if (analysisConfig) {
@@ -58,15 +58,15 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
     <div className="space-y-6">
       {showConfetti && <Confetti />}
       <Card className="text-center">
+        {isSecondAttempt && (
+            <div className="p-3 mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
+                <p className="font-bold">Warning:</p>
+                <p className="text-sm">This result has been viewed before. This might be a second attempt after seeing the answers.</p>
+            </div>
+        )}
         <h2 className="text-2xl md:text-3xl font-bold mb-2">Compatibility Result</h2>
         <p className="text-lg text-gray-600 mb-6">{creatorProfile.name} & {partnerProfile.name}</p>
         
-        {isSecondAttempt && (
-            <div className="p-3 mb-4 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg text-sm">
-                <strong>Warning:</strong> This result has been viewed before. This might be a second attempt after seeing the answers.
-            </div>
-        )}
-
         <CircularProgressBar progress={score} />
         
         <p className="text-lg font-semibold mt-4">You matched on {matches} out of {total} questions.</p>

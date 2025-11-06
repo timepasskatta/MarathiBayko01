@@ -1,35 +1,34 @@
 import React, { useState } from 'react';
-import { Profile, QuizTemplate } from '../types';
-import Button from '../components/Button';
-import Card from '../components/Card';
-import BackButton from '../components/BackButton';
+import { Profile, QuizTemplate } from '../types.ts';
+import Button from '../components/Button.tsx';
+import Card from '../components/Card.tsx';
+import BackButton from '../components/BackButton.tsx';
 
 interface ProfileSetupViewProps {
   userType: 'Creator' | 'Partner';
   onSave: (profile: Profile) => void;
   onBack: () => void;
   activeTemplate: QuizTemplate | null;
-  creatorName?: string;
 }
 
-const ProfileSetupView: React.FC<ProfileSetupViewProps> = ({ userType, onSave, onBack, activeTemplate, creatorName }) => {
-  const [profile, setProfile] = useState<Profile>({
+const ProfileSetupView: React.FC<ProfileSetupViewProps> = ({ userType, onSave, onBack, activeTemplate }) => {
+  const [profile, setProfile] = useState<Omit<Profile, 'relationshipType'>>({
       name: '',
-      age: 18,
+      age: 0,
       gender: '',
-      relationshipType: 'Girlfriend/Boyfriend',
       goodThingAboutPartner: '',
       partnerImprovement: '',
   });
+  const [relationshipType, setRelationshipType] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (profile.name.trim() === '' || !profile.gender || !profile.relationshipType || !profile.goodThingAboutPartner.trim() || !profile.partnerImprovement.trim()) {
-      setError('Please fill out all fields.');
+    if (profile.name.trim() === '' || !relationshipType) {
+      setError('Please fill out your name and relationship type.');
       return;
     }
-    onSave(profile);
+    onSave({ ...profile, relationshipType });
   };
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -39,17 +38,20 @@ const ProfileSetupView: React.FC<ProfileSetupViewProps> = ({ userType, onSave, o
   }
 
   return (
-    <Card className="relative pt-24">
-      <BackButton onClick={onBack} />
-      {activeTemplate && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 w-full px-8 text-center">
-            <p className="text-sm text-gray-500">PLAYING QUIZ</p>
-            <p className="font-bold text-pink-600 truncate">{activeTemplate.title}</p>
+    <Card className="relative">
+      <div className="absolute top-0 left-0 right-0 p-4">
+        <BackButton onClick={onBack} />
+      </div>
+      <div className="text-center pt-10">
+        {activeTemplate?.title && (
+          <div className="mb-4">
+            <p className="text-sm font-semibold text-pink-500">PLAYING QUIZ</p>
+            <h3 className="text-lg font-bold">{activeTemplate.title}</h3>
           </div>
-      )}
-
-      <h2 className="text-2xl font-bold mb-2 text-center">About You & Your Partner</h2>
-      <p className="text-gray-500 mb-6 text-center">{userType === 'Creator' ? "First, tell us a bit about yourself and your partner." : `Great! Now, tell us about yourself and ${creatorName || 'the creator'}.`}</p>
+        )}
+        <h2 className="text-2xl font-bold mb-2">About You & Your Partner</h2>
+        <p className="text-gray-500 mb-6">{userType === 'Creator' ? "First, tell us a bit about yourself and your partner." : "Great! Now, tell us about yourself and the creator."}</p>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-4 text-left">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -59,7 +61,7 @@ const ProfileSetupView: React.FC<ProfileSetupViewProps> = ({ userType, onSave, o
             </div>
             <div>
                 <label htmlFor="age" className="block text-sm font-medium text-gray-700">Your Age</label>
-                <input type="number" name="age" value={profile.age || ''} onChange={handleInputChange} className="mt-1 w-full p-2 border rounded-md" required/>
+                <input type="number" name="age" value={profile.age || ''} onChange={handleInputChange} className="mt-1 w-full p-2 border rounded-md" min="1" required/>
             </div>
              <div>
                 <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Your Gender</label>
@@ -72,7 +74,8 @@ const ProfileSetupView: React.FC<ProfileSetupViewProps> = ({ userType, onSave, o
             </div>
              <div>
                 <label htmlFor="relationshipType" className="block text-sm font-medium text-gray-700">Relationship Type</label>
-                <select name="relationshipType" value={profile.relationshipType} onChange={handleInputChange} className="mt-1 w-full p-2 border rounded-md" required>
+                <select name="relationshipType" value={relationshipType} onChange={(e) => setRelationshipType(e.target.value)} className="mt-1 w-full p-2 border rounded-md" required>
+                    <option value="" disabled>Select...</option>
                     <option value="Girlfriend/Boyfriend">Girlfriend/Boyfriend</option>
                     <option value="Husband/Wife">Husband/Wife</option>
                     <option value="Friends">Friends</option>

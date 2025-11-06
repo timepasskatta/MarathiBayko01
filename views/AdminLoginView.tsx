@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Button from '../components/Button';
-import Card from '../components/Card';
-import BackButton from '../components/BackButton';
+import Button from '../components/Button.tsx';
+import Card from '../components/Card.tsx';
+import BackButton from '../components/BackButton.tsx';
 
 interface AdminLoginViewProps {
   onLoginSuccess: () => void;
@@ -15,7 +15,7 @@ const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onLoginSuccess, onBack 
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simplified login, as bcrypt was causing issues in the environment
+    // Use environment variables for credentials with a fallback for local dev
     const adminUser = process.env.ADMIN_USERNAME || 'timepasskattaofficial@gmail.com';
     const adminPass = process.env.ADMIN_PASSWORD || 'Vaibhavvaibhav@3601';
 

@@ -82,6 +82,6 @@ export interface InternalAd {
 }
 
 export interface SiteImagesConfig {
-  createQuiz: string;
-  joinQuiz: string;
+    createQuiz: string;
+    joinQuiz: string;
 }

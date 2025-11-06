@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Profile, Answers, Question, QuizTemplate, SessionData, InternalAd } from '../types';
-import { encodeObjectToBase64 } from '../utils/helpers';
-import Button from '../components/Button';
-import Card from '../components/Card';
-import BackButton from '../components/BackButton';
-import InternalAdBanner from '../components/InternalAdBanner';
+import { Profile, Answers, Question, QuizTemplate, SessionData, InternalAd } from '../types.ts';
+import { encodeObjectToBase64 } from '../utils/helpers.ts';
+import Button from '../components/Button.tsx';
+import Card from '../components/Card.tsx';
+import BackButton from '../components/BackButton.tsx';
+import InternalAdBanner from '../components/InternalAdBanner.tsx';
 
 interface ShareAndPublishViewProps {
   creatorProfile: Profile;
@@ -18,30 +18,26 @@ interface ShareAndPublishViewProps {
 const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfile, creatorAnswers, questionsUsed, onBack, internalAd, activeTemplate }) => {
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
-  
-  useEffect(() => {
-    if (creatorProfile && activeTemplate) {
-      const sessionData: SessionData = {
-        creatorProfile,
-        creatorAnswers,
-        questionsUsed,
-        analysisConfig: activeTemplate.analysisConfig,
-        quizTitle: activeTemplate.title,
-      };
 
-      const generateCode = async () => {
-        try {
-          const sanitizedData = JSON.parse(JSON.stringify(sessionData));
-          const encodedData = await encodeObjectToBase64(sanitizedData);
-          setInvitationCode(encodedData);
-        } catch (error) {
-            console.error("Error encoding session data:", error);
-            setInvitationCode("Error: Could not generate code.");
-        }
-      };
-      
-      generateCode();
-    }
+  useEffect(() => {
+    const sessionData: SessionData = {
+      creatorProfile,
+      creatorAnswers,
+      questionsUsed,
+      analysisConfig: activeTemplate.analysisConfig,
+      quizTitle: activeTemplate.title,
+    };
+
+    const generateCode = async () => {
+      try {
+        const encodedData = await encodeObjectToBase64(sessionData);
+        setInvitationCode(encodedData);
+      } catch (error) {
+        console.error("Error encoding session data:", error);
+        setInvitationCode("Error: Could not generate code.");
+      }
+    };
+    generateCode();
   }, [creatorProfile, creatorAnswers, questionsUsed, activeTemplate]);
 
   const handleCopy = () => {
@@ -51,10 +47,6 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
       setTimeout(() => setCopied(false), 2000);
     }
   };
-
-  if (!creatorProfile || !invitationCode) {
-    return <Card><p className="text-center animate-pulse">Generating your invitation code...</p></Card>;
-  }
 
   return (
     <div className="space-y-6">
@@ -70,11 +62,11 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfil
           <textarea
             readOnly
             className="w-full h-24 p-2 font-mono text-xs text-gray-600 bg-transparent border-none focus:ring-0 resize-none text-center"
-            value={invitationCode}
+            value={invitationCode || 'Generating...'}
           />
         </div>
         
-        <Button onClick={handleCopy}>
+        <Button onClick={handleCopy} disabled={!invitationCode || invitationCode.startsWith('Error')}>
           {copied ? 'Copied to Clipboard!' : 'Copy Invitation Code'}
         </Button>
       </Card>

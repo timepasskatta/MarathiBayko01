@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
-import { useLocalStorage } from './hooks/useLocalStorage';
-import { officialTemplates as initialOfficialTemplates } from './data/officialTemplates';
+import { useLocalStorage } from './hooks/useLocalStorage.ts';
+import { initialQuestions } from './data/questions.ts';
+import { officialTemplates as initialOfficialTemplates } from './data/officialTemplates.ts';
 import { 
     Question, 
     Profile, 
@@ -13,22 +13,21 @@ import {
     AdSenseConfig, 
     InternalAd,
     SiteImagesConfig
-} from './types';
-import { decodeBase64ToObject, validateSessionData, validateResultData } from './utils/helpers';
-
+} from './types.ts';
+import { decodeBase64ToObject, validateSessionData, validateResultData } from './utils/helpers.ts';
 
 // Views
-import HomeView from './views/HomeView';
-import ProfileSetupView from './views/ProfileSetupView';
-import QuestionChoiceView from './views/QuestionChoiceView';
-import CustomQuestionEditorView from './views/CustomQuestionEditorView';
-import QuestionnaireView from './views/QuestionnaireView';
-import ShareAndPublishView from './views/ShareAndPublishView';
-import PartnerFinishView from './views/PartnerFinishView';
-import ResultsView from './views/ResultsView';
-import AdminLoginView from './views/AdminLoginView';
-import AdminDashboardView from './views/AdminDashboardView';
-import StaticPageView from './views/StaticPageView';
+import HomeView from './views/HomeView.tsx';
+import ProfileSetupView from './views/ProfileSetupView.tsx';
+import QuestionChoiceView from './views/QuestionChoiceView.tsx';
+import CustomQuestionEditorView from './views/CustomQuestionEditorView.tsx';
+import QuestionnaireView from './views/QuestionnaireView.tsx';
+import ShareAndPublishView from './views/ShareAndPublishView.tsx';
+import PartnerFinishView from './views/PartnerFinishView.tsx';
+import ResultsView from './views/ResultsView.tsx';
+import AdminLoginView from './views/AdminLoginView.tsx';
+import AdminDashboardView from './views/AdminDashboardView.tsx';
+import StaticPageView from './views/StaticPageView.tsx';
 
 // Default static page content
 const defaultAboutContent = `
@@ -56,24 +55,24 @@ const App: React.FC = () => {
   const [quizOrigin, setQuizOrigin] = useState<'standard' | 'custom' | 'template' | null>(null);
   
   // Persisted State
-  const [adSenseConfig, setAdSenseConfig] = useLocalStorage<AdSenseConfig>('adsense-config', { enabled: true, clientId: 'ca-pub-YOUR_CLIENT_ID', adSlotId: 'YOUR_AD_SLOT_ID', verificationCode: '' });
-  const [internalAdConfig, setInternalAdConfig] = useLocalStorage<Record<string, InternalAd>>('internal-ad-config', {});
-  const [staticPages, setStaticPages] = useLocalStorage<Record<string, string>>('static-pages-content', {
+  const [quizTemplates, setQuizTemplates] = useLocalStorage<QuizTemplate[]>('quiz-templates-v2', initialOfficialTemplates);
+  const [adSenseConfig, setAdSenseConfig] = useLocalStorage<AdSenseConfig>('adsense-config-v2', { enabled: true, clientId: 'ca-pub-YOUR_CLIENT_ID', adSlotId: 'YOUR_AD_SLOT_ID', verificationCode: '' });
+  const [internalAdConfig, setInternalAdConfig] = useLocalStorage<Record<string, InternalAd>>('internal-ad-config-v2', {});
+  const [siteImages, setSiteImages] = useLocalStorage<SiteImagesConfig>('site-images-config-v2', {
+    createQuiz: 'https://i.postimg.cc/Mps3pbNt/100071928-1.jpg',
+    joinQuiz: 'https://i.postimg.cc/vBn0XRBk/100071928-2.jpg',
+  });
+  const [staticPages, setStaticPages] = useLocalStorage<Record<string, string>>('static-pages-content-v2', {
     about: defaultAboutContent,
     contact: defaultContactContent,
     privacy: defaultPrivacyContent,
     terms: defaultTermsContent
   });
-  const [siteImages, setSiteImages] = useLocalStorage<SiteImagesConfig>('site-images-config', {
-    createQuiz: 'https://i.postimg.cc/Mps3pbNt/100071928-1.jpg',
-    joinQuiz: 'https://i.postimg.cc/vBn0XRBk/100071928-2.jpg',
-  });
-  const [viewedResultCodes, setViewedResultCodes] = useLocalStorage<Record<string, boolean>>('viewed-result-codes', {});
+  const [viewedResultCodes, setViewedResultCodes] = useLocalStorage<Record<string, boolean>>('viewed-result-codes-v2', {});
 
 
   // --- Dynamic Head Scripts ---
   useEffect(() => {
-    // AdSense Script
     if (adSenseConfig.enabled && adSenseConfig.clientId && !adSenseConfig.clientId.includes('YOUR_CLIENT_ID')) {
         const script = document.createElement('script');
         script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adSenseConfig.clientId}`;
@@ -85,7 +84,6 @@ const App: React.FC = () => {
   }, [adSenseConfig.enabled, adSenseConfig.clientId]);
   
   useEffect(() => {
-    // AdSense Verification Meta Tag
     const existingTag = document.querySelector('meta[name="google-adsense-account"]');
     if (adSenseConfig.verificationCode) {
       if (existingTag) {
@@ -117,36 +115,6 @@ const App: React.FC = () => {
     setAppState({ view: 'home' });
   };
   
-  const handleCodeSubmit = async (code: string): Promise<{error?: string}> => {
-    try {
-      // First, try to decode as ResultData
-      const result = await decodeBase64ToObject<ResultData>(code);
-      if (validateResultData(result)) {
-        if (viewedResultCodes[code]) {
-          result.isSecondAttempt = true;
-        }
-        setViewedResultCodes(prev => ({ ...prev, [code]: true }));
-        handleViewResults(result);
-        return {};
-      }
-    } catch (e) {
-      // Not a result code, or invalid. Let's try as SessionData.
-    }
-
-    try {
-      // Try to decode as SessionData (invitation)
-      const session = await decodeBase64ToObject<SessionData>(code);
-      if (validateSessionData(session)) {
-        handleJoinQuiz(session);
-        return {};
-      }
-    } catch (e) {
-      // Still failed.
-    }
-    
-    return { error: 'Invalid or corrupted code. Please check and try again.' };
-  };
-
   // Creator Flow
   const handleStartCreator = () => {
     setQuizOrigin('custom'); // Assume custom until they choose
@@ -161,12 +129,9 @@ const App: React.FC = () => {
     }
   };
   const handleSelectStandardQuestions = () => {
-    const standardQuiz = initialOfficialTemplates.find(t => t.id === 'official-standard');
+    const standardQuiz = quizTemplates.find(t => t.id === 'official-standard');
     if (standardQuiz) {
-      setQuestionsToUse(standardQuiz.questions);
-      setActiveTemplate(standardQuiz);
-      setQuizOrigin('standard');
-      setAppState({ view: 'creator_questionnaire' });
+      handleStartFromTemplate(standardQuiz);
     } else {
       alert("Standard quiz not found!");
     }
@@ -177,25 +142,58 @@ const App: React.FC = () => {
    };
    const handleCustomQuestionsFinish = (questions: Question[]) => {
     setQuestionsToUse(questions);
-    const standardTemplateForAnalysis = initialOfficialTemplates.find(t => t.id === 'official-standard');
-    setActiveTemplate(standardTemplateForAnalysis || null);
-    setAppState({ view: 'creator_questionnaire' });
+    // For custom quizzes, we'll use the analysis of the standard template as a fallback.
+    const standardTemplateForAnalysis = quizTemplates.find(t => t.id === 'official-standard');
+    if(standardTemplateForAnalysis) {
+        setActiveTemplate({
+            ...standardTemplateForAnalysis,
+            title: `${creatorProfile?.name || 'Custom'}'s Quiz`,
+            questions: questions
+        });
+        setAppState({ view: 'creator_questionnaire' });
+    } else {
+        alert("Could not load standard analysis config.");
+    }
    };
   const handleCreatorQuestionnaireComplete = (answers: Answers) => {
     setCreatorAnswers(answers);
     setAppState({ view: 'share' });
   };
   
-  // Partner Flow
-  const handleJoinQuiz = (session: SessionData) => {
-    setSessionData(session);
-    setActiveTemplate(initialOfficialTemplates.find(t => t.title === session.quizTitle) || null);
-    setAppState({ view: 'partner_profile_setup' });
+  // Partner Flow / Result Flow
+  const handleCodeSubmit = async (code: string) => {
+    try {
+      // First, try to decode as a ResultData
+      const decodedResult = await decodeBase64ToObject<ResultData>(code);
+      if (validateResultData(decodedResult)) {
+        let isSecondAttempt = false;
+        if(viewedResultCodes[code]) {
+            isSecondAttempt = true;
+        }
+        setResultData({...decodedResult, isSecondAttempt });
+        setViewedResultCodes(prev => ({...prev, [code]: true}));
+        setAppState({ view: 'results' });
+        return;
+      }
+    } catch (e) { /* Fall through to check as SessionData */ }
+
+    try {
+        // Then, try to decode as a SessionData
+        const decodedSession = await decodeBase64ToObject<SessionData>(code);
+        if (validateSessionData(decodedSession)) {
+          setSessionData(decodedSession);
+          setAppState({ view: 'partner_profile_setup' });
+          return;
+        }
+    } catch (e) { /* Fall through to error */ }
+    
+    alert("Invalid or corrupted code. Please check the code and try again.");
   };
+
   const handlePartnerProfileSave = (profile: Profile) => {
     if (sessionData) {
       setResultData({
-          ...sessionData,
+          ...(sessionData as SessionData),
           partnerProfile: profile,
           partnerAnswers: {}, // Initialize partner answers
       });
@@ -211,7 +209,7 @@ const App: React.FC = () => {
   };
 
   const handleResultCodeGenerated = (code: string) => {
-    setViewedResultCodes(prev => ({ ...prev, [code]: true }));
+    setViewedResultCodes(prev => ({...prev, [code]: true}));
   };
 
   // Template Flow
@@ -222,14 +220,8 @@ const App: React.FC = () => {
     setAppState({ view: 'creator_profile_setup' });
   };
 
-  // Results Flow
-  const handleViewResults = (data: ResultData) => {
-    setResultData(data);
-    setAppState({ view: 'results' });
-  };
-  
   // Admin Flow
-  const handleAdminLogin = () => setAppState({ view: 'admin_login' });
+  const handleViewAdmin = () => setAppState({ view: 'admin_login' });
   const handleLoginSuccess = () => setAppState({ view: 'admin_dashboard' });
   
   // Static Page Flow
@@ -241,37 +233,38 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (appState.view) {
       case 'home':
-        return <HomeView onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onCodeSubmit={handleCodeSubmit} siteImages={siteImages} />;
+        return <HomeView quizTemplates={quizTemplates} siteImages={siteImages} onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onCodeSubmit={handleCodeSubmit} internalAd={internalAdConfig['home']} />;
       
       // Creator Flow
       case 'creator_profile_setup':
         return <ProfileSetupView userType="Creator" onSave={handleCreatorProfileSave} onBack={goToHome} activeTemplate={activeTemplate} />;
       case 'question_choice':
-        return <QuestionChoiceView onSelectStandard={handleSelectStandardQuestions} onSelectCustom={handleSelectCustomQuestions} onBack={() => setAppState({ view: 'creator_profile_setup'})} />;
+        return <QuestionChoiceView onSelectStandard={handleSelectStandardQuestions} onSelectCustom={handleSelectCustomQuestions} onBack={() => setAppState({ view: 'creator_profile_setup' })} />;
       case 'custom_question_editor':
         return <CustomQuestionEditorView onFinish={handleCustomQuestionsFinish} onBack={() => setAppState({ view: 'question_choice' })} />;
       case 'creator_questionnaire':
         const handleCreatorQuestionnaireBack = () => {
-          if (quizOrigin === 'template') {
+          if (quizOrigin === 'template' || quizOrigin === 'standard') {
             goToHome();
-          } else { // standard or custom
+          } else { // custom
             setAppState({ view: 'question_choice' });
           }
         };
-        return <QuestionnaireView userType="Creator" questions={questionsToUse} onComplete={handleCreatorQuestionnaireComplete} onBack={handleCreatorQuestionnaireBack} activeTemplate={activeTemplate} internalAd={internalAdConfig['questionnaire']} />;
+        return <QuestionnaireView userType="Creator" questions={questionsToUse} onComplete={handleCreatorQuestionnaireComplete} onBack={handleCreatorQuestionnaireBack} activeTemplate={activeTemplate}/>;
       case 'share':
-        if (!creatorProfile || !activeTemplate) return <p>Error: Creator profile or template not found.</p>;
+        if (!creatorProfile || !activeTemplate) return <p>Error: Data not found.</p>;
         return <ShareAndPublishView creatorProfile={creatorProfile} creatorAnswers={creatorAnswers} questionsUsed={questionsToUse} onBack={() => setAppState({ view: 'creator_questionnaire'})} internalAd={internalAdConfig['share']} activeTemplate={activeTemplate}/>;
 
       // Partner Flow
       case 'partner_profile_setup':
-        return <ProfileSetupView userType="Partner" onSave={handlePartnerProfileSave} onBack={goToHome} activeTemplate={activeTemplate} creatorName={sessionData?.creatorProfile.name} />;
+         if (!sessionData) return <p>Error: Session data not found.</p>;
+        return <ProfileSetupView userType="Partner" onSave={handlePartnerProfileSave} onBack={goToHome} activeTemplate={{title: sessionData.quizTitle} as QuizTemplate} />;
       case 'partner_questionnaire':
         if (!sessionData) return <p>Error: Session data not found.</p>;
-        return <QuestionnaireView userType="Partner" questions={sessionData.questionsUsed} onComplete={handlePartnerQuestionnaireComplete} onBack={() => setAppState({ view: 'partner_profile_setup'})} activeTemplate={activeTemplate} internalAd={internalAdConfig['questionnaire']} />;
+        return <QuestionnaireView userType="Partner" questions={sessionData.questionsUsed} onComplete={handlePartnerQuestionnaireComplete} onBack={() => setAppState({ view: 'partner_profile_setup'})} activeTemplate={{title: sessionData.quizTitle} as QuizTemplate} internalAd={internalAdConfig['questionnaire']} />;
       case 'partner_finish':
         if (!appState.resultData) return <p>Error: Result data not found.</p>;
-        return <PartnerFinishView resultData={appState.resultData} onBackToHome={goToHome} onViewResults={handleViewResults} onResultCodeGenerated={handleResultCodeGenerated} />;
+        return <PartnerFinishView resultData={appState.resultData} onBackToHome={goToHome} onViewResults={() => setAppState({view: 'results'})} onResultCodeGenerated={handleResultCodeGenerated} />;
 
       // Results
       case 'results':
@@ -282,7 +275,7 @@ const App: React.FC = () => {
       case 'admin_login':
         return <AdminLoginView onLoginSuccess={handleLoginSuccess} onBack={goToHome} />;
       case 'admin_dashboard':
-        return <AdminDashboardView adSenseConfig={adSenseConfig} setAdSenseConfig={setAdSenseConfig} internalAdConfig={internalAdConfig} setInternalAdConfig={setInternalAdConfig} staticPages={staticPages} setStaticPages={setStaticPages} siteImages={siteImages} setSiteImages={setSiteImages} onLogout={goToHome} />;
+        return <AdminDashboardView templates={quizTemplates} setTemplates={setQuizTemplates} adSenseConfig={adSenseConfig} setAdSenseConfig={setAdSenseConfig} internalAdConfig={internalAdConfig} setInternalAdConfig={setInternalAdConfig} siteImages={siteImages} setSiteImages={setSiteImages} staticPages={staticPages} setStaticPages={setStaticPages} onLogout={goToHome} />;
 
       // Static Pages
       case 'static_page':
@@ -316,25 +309,24 @@ const App: React.FC = () => {
                     <button onClick={() => handleViewStaticPage('contact')} className="hover:text-pink-600 hover:underline">Contact</button>
                     <button onClick={() => handleViewStaticPage('privacy')} className="hover:text-pink-600 hover:underline">Privacy</button>
                     <button onClick={() => handleViewStaticPage('terms')} className="hover:text-pink-600 hover:underline">Terms</button>
-                    <a href="#admin" onClick={(e) => { e.preventDefault(); handleAdminLogin(); }} className="hover:text-pink-600 hover:underline">Admin</a>
+                    <button onClick={handleViewAdmin} className="hover:text-pink-600 hover:underline">Admin</button>
                 </div>
-                <div className="mb-6">
+                <div className="my-6">
                   <button 
                     onClick={goToHome} 
                     className="bg-pink-500 text-white rounded-full w-14 h-14 flex items-center justify-center mx-auto shadow-lg hover:bg-pink-600 transform hover:scale-110 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 focus:ring-offset-rose-50"
                     aria-label="Go to Home"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      {/* FIX: Completed truncated SVG path data. */}
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2l-7 7-7-7m14 0V4a1 1 0 00-1-1h-3" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
                   </button>
                 </div>
-             </footer>
+                <p>&copy; {new Date().getFullYear()} Marathi Bayko. All Rights Reserved.</p>
+            </footer>
         </div>
     </div>
   );
 };
 
-// FIX: Added missing default export for the App component.
 export default App;
