@@ -1,6 +1,4 @@
-// FIX: Added .ts extension to the import path for 'types' to resolve module loading errors.
 import { QuizTemplate } from '../types.ts';
-// FIX: Added .ts extension to the import path for 'questions' to resolve module loading errors.
 import { initialQuestions } from './questions.ts';
 
 const defaultAnalysis = {

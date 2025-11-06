@@ -14,7 +14,7 @@ import {
     InternalAd,
     SiteImagesConfig
 } from './types.ts';
-import { decodeBase64ToObject, validateSessionData, validateResultData } from './utils/helpers.ts';
+import { decodeBase64ToObject, validateResultData, validateSessionData } from './utils/helpers.ts';
 
 // Views
 import HomeView from './views/HomeView.tsx';
@@ -53,26 +53,27 @@ const App: React.FC = () => {
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [resultData, setResultData] = useState<ResultData | null>(null);
   const [quizOrigin, setQuizOrigin] = useState<'standard' | 'custom' | 'template' | null>(null);
+  const [viewedResultCodes, setViewedResultCodes] = useLocalStorage<Record<string, boolean>>('viewed-result-codes', {});
+  const [usedInvitationCodes, setUsedInvitationCodes] = useLocalStorage<Record<string, boolean>>('used-invitation-codes', {});
   
   // Persisted State
-  const [quizTemplates, setQuizTemplates] = useLocalStorage<QuizTemplate[]>('quiz-templates-v2', initialOfficialTemplates);
-  const [adSenseConfig, setAdSenseConfig] = useLocalStorage<AdSenseConfig>('adsense-config-v2', { enabled: true, clientId: 'ca-pub-YOUR_CLIENT_ID', adSlotId: 'YOUR_AD_SLOT_ID', verificationCode: '' });
-  const [internalAdConfig, setInternalAdConfig] = useLocalStorage<Record<string, InternalAd>>('internal-ad-config-v2', {});
-  const [siteImages, setSiteImages] = useLocalStorage<SiteImagesConfig>('site-images-config-v2', {
-    createQuiz: 'https://i.postimg.cc/Mps3pbNt/100071928-1.jpg',
-    joinQuiz: 'https://i.postimg.cc/vBn0XRBk/100071928-2.jpg',
+  const [quizTemplates, setQuizTemplates] = useState<QuizTemplate[]>(initialOfficialTemplates);
+  const [adSenseConfig, setAdSenseConfig] = useLocalStorage<AdSenseConfig>('adsense-config', { enabled: true, clientId: 'ca-pub-YOUR_CLIENT_ID', adSlotId: 'YOUR_AD_SLOT_ID', verificationCode: '' });
+  const [internalAdConfig, setInternalAdConfig] = useLocalStorage<Record<string, InternalAd>>('internal-ad-config', {});
+  const [siteImages, setSiteImages] = useLocalStorage<SiteImagesConfig>('site-images', {
+    createQuiz: "https://i.postimg.cc/Mps3pbNt/100071928-1.jpg",
+    joinQuiz: "https://i.postimg.cc/vBn0XRBk/100071928-2.jpg"
   });
-  const [staticPages, setStaticPages] = useLocalStorage<Record<string, string>>('static-pages-content-v2', {
+  const [staticPages, setStaticPages] = useLocalStorage<Record<string, string>>('static-pages-content', {
     about: defaultAboutContent,
     contact: defaultContactContent,
     privacy: defaultPrivacyContent,
     terms: defaultTermsContent
   });
-  const [viewedResultCodes, setViewedResultCodes] = useLocalStorage<Record<string, boolean>>('viewed-result-codes-v2', {});
-
 
   // --- Dynamic Head Scripts ---
   useEffect(() => {
+    // AdSense Script
     if (adSenseConfig.enabled && adSenseConfig.clientId && !adSenseConfig.clientId.includes('YOUR_CLIENT_ID')) {
         const script = document.createElement('script');
         script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adSenseConfig.clientId}`;
@@ -84,6 +85,7 @@ const App: React.FC = () => {
   }, [adSenseConfig.enabled, adSenseConfig.clientId]);
   
   useEffect(() => {
+    // AdSense Verification Meta Tag
     const existingTag = document.querySelector('meta[name="google-adsense-account"]');
     if (adSenseConfig.verificationCode) {
       if (existingTag) {
@@ -104,7 +106,6 @@ const App: React.FC = () => {
 
   // --- Navigation and State Handlers ---
   const goToHome = () => {
-    // Reset volatile state
     setCreatorProfile(null);
     setCreatorAnswers({});
     setSessionData(null);
@@ -115,23 +116,48 @@ const App: React.FC = () => {
     setAppState({ view: 'home' });
   };
   
+  const handleCodeSubmit = async (code: string) => {
+    try {
+        const decodedData = await decodeBase64ToObject<any>(code);
+
+        if (validateResultData(decodedData)) {
+            const isSecondAttempt = viewedResultCodes[code];
+            setViewedResultCodes(prev => ({ ...prev, [code]: true }));
+            setResultData({ ...decodedData, isSecondAttempt });
+            setAppState({ view: 'results' });
+        } else if (validateSessionData(decodedData)) {
+            if (usedInvitationCodes[code]) {
+                alert("This invitation code has already been used. Please ask your partner for a new one.");
+                return;
+            }
+            setUsedInvitationCodes(prev => ({ ...prev, [code]: true }));
+            setSessionData(decodedData);
+            setAppState({ view: 'partner_profile_setup' });
+        } else {
+            alert('Invalid or corrupted code. Please check and try again.');
+        }
+    } catch (error) {
+        console.error("Error decoding code:", error);
+        alert('Invalid or corrupted code. Please check and try again.');
+    }
+  };
+  
   // Creator Flow
   const handleStartCreator = () => {
     setQuizOrigin('custom'); // Assume custom until they choose
-    setAppState({ view: 'creator_profile_setup' });
+    setAppState({ view: 'question_choice' });
   };
   const handleCreatorProfileSave = (profile: Profile) => {
     setCreatorProfile(profile);
-    if(quizOrigin === 'template') {
-        setAppState({ view: 'creator_questionnaire' });
-    } else {
-        setAppState({ view: 'question_choice' });
-    }
+    setAppState({ view: 'creator_questionnaire' });
   };
   const handleSelectStandardQuestions = () => {
     const standardQuiz = quizTemplates.find(t => t.id === 'official-standard');
     if (standardQuiz) {
-      handleStartFromTemplate(standardQuiz);
+      setQuestionsToUse(standardQuiz.questions);
+      setActiveTemplate(standardQuiz);
+      setQuizOrigin('standard');
+      setAppState({ view: 'creator_profile_setup' });
     } else {
       alert("Standard quiz not found!");
     }
@@ -142,58 +168,25 @@ const App: React.FC = () => {
    };
    const handleCustomQuestionsFinish = (questions: Question[]) => {
     setQuestionsToUse(questions);
-    // For custom quizzes, we'll use the analysis of the standard template as a fallback.
     const standardTemplateForAnalysis = quizTemplates.find(t => t.id === 'official-standard');
-    if(standardTemplateForAnalysis) {
-        setActiveTemplate({
-            ...standardTemplateForAnalysis,
-            title: `${creatorProfile?.name || 'Custom'}'s Quiz`,
-            questions: questions
-        });
-        setAppState({ view: 'creator_questionnaire' });
-    } else {
-        alert("Could not load standard analysis config.");
-    }
+    setActiveTemplate({
+        ...(standardTemplateForAnalysis || initialOfficialTemplates[0]),
+        id: `custom-${Date.now()}`,
+        title: "Your Custom Quiz",
+        questions: questions
+    });
+    setAppState({ view: 'creator_profile_setup' });
    };
   const handleCreatorQuestionnaireComplete = (answers: Answers) => {
     setCreatorAnswers(answers);
     setAppState({ view: 'share' });
   };
   
-  // Partner Flow / Result Flow
-  const handleCodeSubmit = async (code: string) => {
-    try {
-      // First, try to decode as a ResultData
-      const decodedResult = await decodeBase64ToObject<ResultData>(code);
-      if (validateResultData(decodedResult)) {
-        let isSecondAttempt = false;
-        if(viewedResultCodes[code]) {
-            isSecondAttempt = true;
-        }
-        setResultData({...decodedResult, isSecondAttempt });
-        setViewedResultCodes(prev => ({...prev, [code]: true}));
-        setAppState({ view: 'results' });
-        return;
-      }
-    } catch (e) { /* Fall through to check as SessionData */ }
-
-    try {
-        // Then, try to decode as a SessionData
-        const decodedSession = await decodeBase64ToObject<SessionData>(code);
-        if (validateSessionData(decodedSession)) {
-          setSessionData(decodedSession);
-          setAppState({ view: 'partner_profile_setup' });
-          return;
-        }
-    } catch (e) { /* Fall through to error */ }
-    
-    alert("Invalid or corrupted code. Please check the code and try again.");
-  };
-
+  // Partner Flow
   const handlePartnerProfileSave = (profile: Profile) => {
     if (sessionData) {
       setResultData({
-          ...(sessionData as SessionData),
+          ...sessionData,
           partnerProfile: profile,
           partnerAnswers: {}, // Initialize partner answers
       });
@@ -209,7 +202,7 @@ const App: React.FC = () => {
   };
 
   const handleResultCodeGenerated = (code: string) => {
-    setViewedResultCodes(prev => ({...prev, [code]: true}));
+    setViewedResultCodes(prev => ({ ...prev, [code]: true }));
   };
 
   // Template Flow
@@ -219,13 +212,13 @@ const App: React.FC = () => {
     setQuizOrigin('template');
     setAppState({ view: 'creator_profile_setup' });
   };
-
-  // Admin Flow
-  const handleViewAdmin = () => setAppState({ view: 'admin_login' });
-  const handleLoginSuccess = () => setAppState({ view: 'admin_dashboard' });
   
-  // Static Page Flow
-  const handleViewStaticPage = (page: 'about' | 'contact' | 'privacy' | 'terms') => {
+  // Admin Flow
+  const handleViewStaticPage = (page: 'about' | 'contact' | 'privacy' | 'terms' | 'admin') => {
+      if (page === 'admin') {
+          setAppState({ view: 'admin_login' });
+          return;
+      }
       setAppState({ view: 'static_page', page });
   };
 
@@ -236,44 +229,36 @@ const App: React.FC = () => {
         return <HomeView quizTemplates={quizTemplates} siteImages={siteImages} onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onCodeSubmit={handleCodeSubmit} internalAd={internalAdConfig['home']} />;
       
       // Creator Flow
-      case 'creator_profile_setup':
-        return <ProfileSetupView userType="Creator" onSave={handleCreatorProfileSave} onBack={goToHome} activeTemplate={activeTemplate} />;
       case 'question_choice':
-        return <QuestionChoiceView onSelectStandard={handleSelectStandardQuestions} onSelectCustom={handleSelectCustomQuestions} onBack={() => setAppState({ view: 'creator_profile_setup' })} />;
+        return <QuestionChoiceView onSelectStandard={handleSelectStandardQuestions} onSelectCustom={handleSelectCustomQuestions} onBack={goToHome} />;
       case 'custom_question_editor':
         return <CustomQuestionEditorView onFinish={handleCustomQuestionsFinish} onBack={() => setAppState({ view: 'question_choice' })} />;
+      case 'creator_profile_setup':
+        return <ProfileSetupView userType="Creator" onSave={handleCreatorProfileSave} onBack={goToHome} activeTemplate={activeTemplate} />;
       case 'creator_questionnaire':
-        const handleCreatorQuestionnaireBack = () => {
-          if (quizOrigin === 'template' || quizOrigin === 'standard') {
-            goToHome();
-          } else { // custom
-            setAppState({ view: 'question_choice' });
-          }
-        };
-        return <QuestionnaireView userType="Creator" questions={questionsToUse} onComplete={handleCreatorQuestionnaireComplete} onBack={handleCreatorQuestionnaireBack} activeTemplate={activeTemplate}/>;
+        return <QuestionnaireView userType="Creator" questions={questionsToUse} onComplete={handleCreatorQuestionnaireComplete} onBack={() => setAppState({ view: 'creator_profile_setup' })} activeTemplate={activeTemplate} internalAd={internalAdConfig['questionnaire']}/>;
       case 'share':
-        if (!creatorProfile || !activeTemplate) return <p>Error: Data not found.</p>;
+        if (!creatorProfile || !creatorAnswers || !activeTemplate) { goToHome(); return null; }
         return <ShareAndPublishView creatorProfile={creatorProfile} creatorAnswers={creatorAnswers} questionsUsed={questionsToUse} onBack={() => setAppState({ view: 'creator_questionnaire'})} internalAd={internalAdConfig['share']} activeTemplate={activeTemplate}/>;
 
       // Partner Flow
       case 'partner_profile_setup':
-         if (!sessionData) return <p>Error: Session data not found.</p>;
-        return <ProfileSetupView userType="Partner" onSave={handlePartnerProfileSave} onBack={goToHome} activeTemplate={{title: sessionData.quizTitle} as QuizTemplate} />;
+        return <ProfileSetupView userType="Partner" onSave={handlePartnerProfileSave} onBack={goToHome} activeTemplate={sessionData ? { ...initialOfficialTemplates[0], title: sessionData.quizTitle } as QuizTemplate : null} />;
       case 'partner_questionnaire':
         if (!sessionData) return <p>Error: Session data not found.</p>;
-        return <QuestionnaireView userType="Partner" questions={sessionData.questionsUsed} onComplete={handlePartnerQuestionnaireComplete} onBack={() => setAppState({ view: 'partner_profile_setup'})} activeTemplate={{title: sessionData.quizTitle} as QuizTemplate} internalAd={internalAdConfig['questionnaire']} />;
+        return <QuestionnaireView userType="Partner" questions={sessionData.questionsUsed} onComplete={handlePartnerQuestionnaireComplete} onBack={() => setAppState({ view: 'partner_profile_setup'})} activeTemplate={{ ...initialOfficialTemplates[0], title: sessionData.quizTitle } as QuizTemplate} internalAd={internalAdConfig['questionnaire']}/>;
       case 'partner_finish':
-        if (!appState.resultData) return <p>Error: Result data not found.</p>;
-        return <PartnerFinishView resultData={appState.resultData} onBackToHome={goToHome} onViewResults={() => setAppState({view: 'results'})} onResultCodeGenerated={handleResultCodeGenerated} />;
+        if (!appState.resultData) { goToHome(); return null; }
+        return <PartnerFinishView resultData={appState.resultData} onBackToHome={goToHome} onResultCodeGenerated={handleResultCodeGenerated} />;
 
       // Results
       case 'results':
-        if (!resultData) return <p>Error: Result data not found.</p>;
+        if (!resultData) { goToHome(); return null; }
         return <ResultsView resultData={resultData} onBackToHome={goToHome} internalAdConfig={internalAdConfig} />;
 
       // Admin
       case 'admin_login':
-        return <AdminLoginView onLoginSuccess={handleLoginSuccess} onBack={goToHome} />;
+        return <AdminLoginView onLoginSuccess={() => setAppState({ view: 'admin_dashboard' })} onBack={goToHome} />;
       case 'admin_dashboard':
         return <AdminDashboardView templates={quizTemplates} setTemplates={setQuizTemplates} adSenseConfig={adSenseConfig} setAdSenseConfig={setAdSenseConfig} internalAdConfig={internalAdConfig} setInternalAdConfig={setInternalAdConfig} siteImages={siteImages} setSiteImages={setSiteImages} staticPages={staticPages} setStaticPages={setStaticPages} onLogout={goToHome} />;
 
@@ -304,21 +289,22 @@ const App: React.FC = () => {
                 {renderContent()}
             </main>
              <footer className="text-center mt-12 text-sm text-gray-400">
-                <div className="flex justify-center flex-wrap gap-4 mb-4">
+                <div className="flex justify-center gap-4 mb-4">
                     <button onClick={() => handleViewStaticPage('about')} className="hover:text-pink-600 hover:underline">About</button>
                     <button onClick={() => handleViewStaticPage('contact')} className="hover:text-pink-600 hover:underline">Contact</button>
                     <button onClick={() => handleViewStaticPage('privacy')} className="hover:text-pink-600 hover:underline">Privacy</button>
                     <button onClick={() => handleViewStaticPage('terms')} className="hover:text-pink-600 hover:underline">Terms</button>
-                    <button onClick={handleViewAdmin} className="hover:text-pink-600 hover:underline">Admin</button>
+                    <button onClick={() => handleViewStaticPage('admin')} className="hover:text-pink-600 hover:underline">Admin</button>
                 </div>
-                <div className="my-6">
+                <div className="mb-6">
                   <button 
                     onClick={goToHome} 
                     className="bg-pink-500 text-white rounded-full w-14 h-14 flex items-center justify-center mx-auto shadow-lg hover:bg-pink-600 transform hover:scale-110 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 focus:ring-offset-rose-50"
                     aria-label="Go to Home"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                      <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                   </button>
                 </div>
