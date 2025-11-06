@@ -1,20 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
+import { AppState, Profile, Answers, Question, SessionData, ResultData, AdSenseConfig, InternalAd, SiteImagesConfig, QuizTemplate } from './types.ts';
 import { useLocalStorage } from './hooks/useLocalStorage.ts';
+import { decodeBase64ToObject, validateSessionData, validateResultData } from './utils/helpers.ts';
 import { initialQuestions } from './data/questions.ts';
-import { officialTemplates as initialOfficialTemplates } from './data/officialTemplates.ts';
-import { 
-    Question, 
-    Profile, 
-    Answers, 
-    AppState, 
-    SessionData, 
-    QuizTemplate, 
-    ResultData, 
-    AdSenseConfig, 
-    InternalAd,
-    SiteImagesConfig
-} from './types.ts';
-import { decodeBase64ToObject, validateResultData, validateSessionData } from './utils/helpers.ts';
+import { officialTemplates } from './data/officialTemplates.ts';
 
 // Views
 import HomeView from './views/HomeView.tsx';
@@ -29,290 +19,264 @@ import AdminLoginView from './views/AdminLoginView.tsx';
 import AdminDashboardView from './views/AdminDashboardView.tsx';
 import StaticPageView from './views/StaticPageView.tsx';
 
-// Default static page content
-const defaultAboutContent = `
-    <p>Welcome to Marathi Bayko, the ultimate relationship compatibility checker! Our mission is to help couples, friends, and family members connect on a deeper level through fun and insightful quizzes.</p>
-    <p>Whether you're starting a new relationship, celebrating years together, or just want to understand your partner better, our quizzes are designed to spark meaningful conversations and bring you closer together. Create your own personalized quiz or try one of our expertly crafted templates!</p>
-`;
-const defaultContactContent = `<p>Have questions or feedback? We'd love to hear from you! Please reach out to us at <strong>contact@marathibayko.app</strong> (example email).</p>`;
-const defaultPrivacyContent = `
-    <p>Your privacy is important to us. This application is designed to be completely serverless. All data, including your profile information and quiz answers, is stored exclusively on your local device's browser storage (LocalStorage). We do not collect, store, or share any of your personal data on any servers.</p>
-    <p>Invitation codes contain compressed quiz data and are shared directly by you, peer-to-peer. They are not stored by us. Our AdSense and Internal Ad features operate under their respective privacy policies.</p>
-`;
-const defaultTermsContent = `
-    <p>By using Marathi Bayko, you agree to our terms. This is a fun application meant for entertainment. The results are not a substitute for professional relationship advice. You are responsible for the content you create and share. Please be respectful and enjoy connecting with your loved ones!</p>
-`;
+// Components
+import AdBanner from './components/AdBanner.tsx';
+import InternalAdBanner from './components/InternalAdBanner.tsx';
 
-const App: React.FC = () => {
-  // State Management
+// Default configurations
+const DEFAULT_ADSENSE_CONFIG: AdSenseConfig = {
+  enabled: false,
+  clientId: 'ca-pub-YOUR_CLIENT_ID',
+  adSlotId: 'YOUR_AD_SLOT_ID',
+  verificationCode: ''
+};
+
+const DEFAULT_INTERNAL_AD_CONFIG: Record<string, InternalAd> = {
+  home: { enabled: false, imageUrl: '', redirectUrl: '', title: '' },
+  questionnaire: { enabled: false, imageUrl: '', redirectUrl: '', title: '' },
+  share: { enabled: false, imageUrl: '', redirectUrl: '', title: '' },
+  results: { enabled: false, imageUrl: '', redirectUrl: '', title: '' },
+};
+
+const DEFAULT_SITE_IMAGES: SiteImagesConfig = {
+    createQuiz: 'https://i.postimg.cc/Mps3pbNt/100071928-1.jpg' // Your requested image
+};
+
+const DEFAULT_STATIC_PAGES: Record<string, string> = {
+    about: '<h1>About Us</h1><p>Welcome to Marathi Bayko, the ultimate relationship compatibility checker! Our mission is to help couples, friends, and family members connect on a deeper level through fun and insightful quizzes.</p>',
+    contact: '<h1>Contact Us</h1><p>Have questions or feedback? We\'d love to hear from you! Please reach out to us at <strong>contact@marathibayko.app</strong>.</p>',
+    privacy: '<h1>Privacy Policy</h1><p>Your privacy is important to us. This application is designed to be completely serverless. All data is encoded in shared links and not stored on any server by us.</p>',
+    terms: '<h1>Terms of Service</h1><p>By using our service, you agree to these terms. This is a fun application meant for entertainment. The results are not a substitute for professional relationship advice.</p>',
+};
+
+function App() {
   const [appState, setAppState] = useState<AppState>({ view: 'home' });
-  const [questionsToUse, setQuestionsToUse] = useState<Question[]>([]);
   const [activeTemplate, setActiveTemplate] = useState<QuizTemplate | null>(null);
+
   const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null);
-  const [creatorAnswers, setCreatorAnswers] = useState<Answers>({});
-  const [sessionData, setSessionData] = useState<SessionData | null>(null);
-  const [resultData, setResultData] = useState<ResultData | null>(null);
-  const [quizOrigin, setQuizOrigin] = useState<'standard' | 'custom' | 'template' | null>(null);
-  const [viewedResultCodes, setViewedResultCodes] = useLocalStorage<Record<string, boolean>>('viewed-result-codes', {});
-  const [usedInvitationCodes, setUsedInvitationCodes] = useLocalStorage<Record<string, boolean>>('used-invitation-codes', {});
-  
-  // Persisted State
-  const [quizTemplates, setQuizTemplates] = useState<QuizTemplate[]>(initialOfficialTemplates);
-  const [adSenseConfig, setAdSenseConfig] = useLocalStorage<AdSenseConfig>('adsense-config', { enabled: true, clientId: 'ca-pub-YOUR_CLIENT_ID', adSlotId: 'YOUR_AD_SLOT_ID', verificationCode: '' });
-  const [internalAdConfig, setInternalAdConfig] = useLocalStorage<Record<string, InternalAd>>('internal-ad-config', {});
-  const [siteImages, setSiteImages] = useLocalStorage<SiteImagesConfig>('site-images', {
-    createQuiz: "https://i.postimg.cc/Mps3pbNt/100071928-1.jpg",
-    joinQuiz: "https://i.postimg.cc/vBn0XRBk/100071928-2.jpg"
-  });
-  const [staticPages, setStaticPages] = useLocalStorage<Record<string, string>>('static-pages-content', {
-    about: defaultAboutContent,
-    contact: defaultContactContent,
-    privacy: defaultPrivacyContent,
-    terms: defaultTermsContent
-  });
+  const [customQuestions, setCustomQuestions] = useState<Question[] | null>(null);
 
-  // --- Dynamic Head Scripts ---
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useLocalStorage('isAdminLoggedIn-v2', false);
+  const [adSenseConfig, setAdSenseConfig] = useLocalStorage<AdSenseConfig>('adSenseConfig-v2', DEFAULT_ADSENSE_CONFIG);
+  const [internalAdConfig, setInternalAdConfig] = useLocalStorage<Record<string, InternalAd>>('internalAdConfig-v2', DEFAULT_INTERNAL_AD_CONFIG);
+  const [siteImages, setSiteImages] = useLocalStorage<SiteImagesConfig>('siteImagesConfig-v2', DEFAULT_SITE_IMAGES);
+  const [staticPages, setStaticPages] = useLocalStorage<Record<string, string>>('staticPagesContent-v2', DEFAULT_STATIC_PAGES);
+  const [usedInvitationCodes, setUsedInvitationCodes] = useLocalStorage<Record<string, boolean>>('usedInvitationCodes-v2', {});
+
   useEffect(() => {
-    // AdSense Script
-    if (adSenseConfig.enabled && adSenseConfig.clientId && !adSenseConfig.clientId.includes('YOUR_CLIENT_ID')) {
-        const script = document.createElement('script');
-        script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adSenseConfig.clientId}`;
-        script.async = true;
-        script.crossOrigin = 'anonymous';
-        document.head.appendChild(script);
-        return () => { document.head.removeChild(script); };
-    }
-  }, [adSenseConfig.enabled, adSenseConfig.clientId]);
-  
-  useEffect(() => {
-    // AdSense Verification Meta Tag
-    const existingTag = document.querySelector('meta[name="google-adsense-account"]');
-    if (adSenseConfig.verificationCode) {
-      if (existingTag) {
-        existingTag.setAttribute('content', adSenseConfig.verificationCode);
-      } else {
-        const meta = document.createElement('meta');
-        meta.name = 'google-adsense-account';
-        meta.content = adSenseConfig.verificationCode;
-        document.head.appendChild(meta);
-      }
-    } else {
-      if(existingTag) {
-        document.head.removeChild(existingTag);
-      }
-    }
-  }, [adSenseConfig.verificationCode]);
+    // URL-based routing
+    const handleUrlChange = async () => {
+      const hash = window.location.hash;
+      
+      if (hash.startsWith('#/session/')) {
+        const encodedData = hash.substring('#/session/'.length);
 
-
-  // --- Navigation and State Handlers ---
-  const goToHome = () => {
-    setCreatorProfile(null);
-    setCreatorAnswers({});
-    setSessionData(null);
-    setResultData(null);
-    setQuestionsToUse([]);
-    setActiveTemplate(null);
-    setQuizOrigin(null);
-    setAppState({ view: 'home' });
-  };
-  
-  const handleCodeSubmit = async (code: string) => {
-    try {
-        const decodedData = await decodeBase64ToObject<any>(code);
-
-        if (validateResultData(decodedData)) {
-            const isSecondAttempt = viewedResultCodes[code];
-            setViewedResultCodes(prev => ({ ...prev, [code]: true }));
-            setResultData({ ...decodedData, isSecondAttempt });
-            setAppState({ view: 'results' });
-        } else if (validateSessionData(decodedData)) {
-            if (usedInvitationCodes[code]) {
-                alert("This invitation code has already been used. Please ask your partner for a new one.");
-                return;
-            }
-            setUsedInvitationCodes(prev => ({ ...prev, [code]: true }));
-            setSessionData(decodedData);
-            setAppState({ view: 'partner_profile_setup' });
-        } else {
-            alert('Invalid or corrupted code. Please check and try again.');
+        if (usedInvitationCodes[encodedData]) {
+          alert("This invitation code has already been used. Please ask your partner for a new one.");
+          window.location.hash = '';
+          return;
         }
-    } catch (error) {
-        console.error("Error decoding code:", error);
-        alert('Invalid or corrupted code. Please check and try again.');
-    }
-  };
+
+        try {
+          const sessionData = await decodeBase64ToObject<SessionData>(encodedData);
+          if (validateSessionData(sessionData)) {
+            setAppState({ view: 'partner_profile_setup', sessionData });
+          } else {
+            throw new Error("Invalid session data");
+          }
+        } catch (error) {
+          console.error("Failed to decode session data:", error);
+          alert("The quiz link is invalid or corrupted. Please ask your partner for a new link.");
+          window.location.hash = '';
+        }
+      } else if (hash.startsWith('#/result/')) {
+        const encodedData = hash.substring('#/result/'.length);
+        try {
+          const resultData = await decodeBase64ToObject<ResultData>(encodedData);
+          if (validateResultData(resultData)) {
+             const viewedResults = JSON.parse(localStorage.getItem('viewedResults-v2') || '{}');
+              if (viewedResults[encodedData]) {
+                  resultData.isSecondAttempt = true;
+              }
+              setAppState({ view: 'results', resultData });
+          } else {
+            throw new Error("Invalid result data");
+          }
+        } catch (error) {
+          console.error("Failed to decode result data:", error);
+          alert("The result link is invalid or corrupted.");
+          window.location.hash = '';
+        }
+      } else if (hash === '#/admin') {
+        setAppState(isAdminLoggedIn ? { view: 'admin_dashboard' } : { view: 'admin_login' });
+      } else if (hash.startsWith('#/page/')) {
+        const page = hash.substring('#/page/'.length) as 'about' | 'contact' | 'privacy' | 'terms';
+        if (['about', 'contact', 'privacy', 'terms'].includes(page)) {
+            setAppState({ view: 'static_page', page });
+        } else {
+            window.location.hash = '';
+        }
+      } else {
+        if (appState.view !== 'home') {
+          setAppState({ view: 'home' });
+        }
+      }
+    };
+
+    handleUrlChange();
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => window.removeEventListener('hashchange', handleUrlChange);
+  }, [isAdminLoggedIn]);
   
-  // Creator Flow
-  const handleStartCreator = () => {
-    setQuizOrigin('custom'); // Assume custom until they choose
-    setAppState({ view: 'question_choice' });
+  const resetToHome = () => {
+      setCreatorProfile(null);
+      setCustomQuestions(null);
+      setActiveTemplate(null);
+      window.location.hash = '';
+      setAppState({ view: 'home' });
   };
+
+  const handleStartCreator = (template: QuizTemplate) => {
+    setActiveTemplate(template);
+    setAppState(template.id === 'action-create' ? { view: 'question_choice' } : { view: 'creator_profile_setup' });
+  };
+
   const handleCreatorProfileSave = (profile: Profile) => {
     setCreatorProfile(profile);
     setAppState({ view: 'creator_questionnaire' });
   };
-  const handleSelectStandardQuestions = () => {
-    const standardQuiz = quizTemplates.find(t => t.id === 'official-standard');
-    if (standardQuiz) {
-      setQuestionsToUse(standardQuiz.questions);
-      setActiveTemplate(standardQuiz);
-      setQuizOrigin('standard');
-      setAppState({ view: 'creator_profile_setup' });
-    } else {
-      alert("Standard quiz not found!");
-    }
-  };
-   const handleSelectCustomQuestions = () => {
-    setQuizOrigin('custom');
-    setAppState({ view: 'custom_question_editor' });
-   };
-   const handleCustomQuestionsFinish = (questions: Question[]) => {
-    setQuestionsToUse(questions);
-    const standardTemplateForAnalysis = quizTemplates.find(t => t.id === 'official-standard');
-    setActiveTemplate({
-        ...(standardTemplateForAnalysis || initialOfficialTemplates[0]),
-        id: `custom-${Date.now()}`,
-        title: "Your Custom Quiz",
-        questions: questions
-    });
-    setAppState({ view: 'creator_profile_setup' });
-   };
+  
   const handleCreatorQuestionnaireComplete = (answers: Answers) => {
-    setCreatorAnswers(answers);
-    setAppState({ view: 'share' });
-  };
-  
-  // Partner Flow
-  const handlePartnerProfileSave = (profile: Profile) => {
-    if (sessionData) {
-      setResultData({
-          ...sessionData,
-          partnerProfile: profile,
-          partnerAnswers: {}, // Initialize partner answers
-      });
-      setAppState({ view: 'partner_questionnaire' });
-    }
-  };
-  const handlePartnerQuestionnaireComplete = (answers: Answers) => {
-    if (resultData) {
-      const finalResultData = { ...resultData, partnerAnswers: answers };
-      setResultData(finalResultData);
-      setAppState({ view: 'partner_finish', resultData: finalResultData });
+    if (creatorProfile && activeTemplate) {
+      const sessionData: SessionData = {
+        creatorProfile,
+        creatorAnswers: answers,
+        questionsUsed: customQuestions || activeTemplate.questions,
+        analysisConfig: activeTemplate.analysisConfig,
+        quizTitle: activeTemplate.title
+      };
+      setAppState({ view: 'share', sessionData });
     }
   };
 
+  const handlePartnerQuestionnaireComplete = (partnerAnswers: Answers, sessionData: SessionData, partnerProfile: Profile) => {
+    const resultData: ResultData = { ...sessionData, partnerProfile, partnerAnswers };
+    const hash = window.location.hash;
+    const encodedData = hash.substring('#/session/'.length);
+    setUsedInvitationCodes(prev => ({ ...prev, [encodedData]: true }));
+    setAppState({ view: 'partner_finish', resultData });
+  };
+  
   const handleResultCodeGenerated = (code: string) => {
-    setViewedResultCodes(prev => ({ ...prev, [code]: true }));
+    const viewedResults = JSON.parse(localStorage.getItem('viewedResults-v2') || '{}');
+    viewedResults[code] = true;
+    localStorage.setItem('viewedResults-v2', JSON.stringify(viewedResults));
+    window.location.hash = `#/result/${code}`;
   };
 
-  // Template Flow
-  const handleStartFromTemplate = (template: QuizTemplate) => {
-    setQuestionsToUse(template.questions);
-    setActiveTemplate(template);
-    setQuizOrigin('template');
-    setAppState({ view: 'creator_profile_setup' });
-  };
-  
-  // Admin Flow
-  const handleViewStaticPage = (page: 'about' | 'contact' | 'privacy' | 'terms' | 'admin') => {
-      if (page === 'admin') {
-          setAppState({ view: 'admin_login' });
-          return;
-      }
-      setAppState({ view: 'static_page', page });
-  };
-
-  // --- View Rendering ---
   const renderContent = () => {
     switch (appState.view) {
       case 'home':
-        return <HomeView quizTemplates={quizTemplates} siteImages={siteImages} onStartCreator={handleStartCreator} onStartFromTemplate={handleStartFromTemplate} onCodeSubmit={handleCodeSubmit} internalAd={internalAdConfig['home']} />;
-      
-      // Creator Flow
-      case 'question_choice':
-        return <QuestionChoiceView onSelectStandard={handleSelectStandardQuestions} onSelectCustom={handleSelectCustomQuestions} onBack={goToHome} />;
-      case 'custom_question_editor':
-        return <CustomQuestionEditorView onFinish={handleCustomQuestionsFinish} onBack={() => setAppState({ view: 'question_choice' })} />;
+        return <HomeView onStartCreator={handleStartCreator} siteImages={siteImages} />;
+
       case 'creator_profile_setup':
-        return <ProfileSetupView userType="Creator" onSave={handleCreatorProfileSave} onBack={goToHome} activeTemplate={activeTemplate} />;
+        return <ProfileSetupView userType="Creator" onSave={handleCreatorProfileSave} onBack={resetToHome} activeTemplate={activeTemplate} />;
+      
+      case 'question_choice':
+        return <QuestionChoiceView onSelectStandard={() => {
+            const standardTemplate = officialTemplates.find(t => t.id === 'official-standard')!;
+            const templateForCustom = {...standardTemplate, id: 'custom', title: 'Your Custom Quiz', description: 'A quiz created by you.'};
+            setActiveTemplate(templateForCustom);
+            setCustomQuestions(initialQuestions);
+            setAppState({ view: 'creator_profile_setup' });
+          }}
+          onSelectCustom={() => setAppState({ view: 'custom_question_editor' })} onBack={resetToHome}
+        />;
+      
+      case 'custom_question_editor':
+        return <CustomQuestionEditorView onFinish={(questions) => {
+            const standardTemplate = officialTemplates.find(t => t.id === 'official-standard')!;
+            const templateForCustom = {...standardTemplate, id: 'custom', title: 'Your Custom Quiz', description: 'A quiz created by you.'};
+            setActiveTemplate(templateForCustom);
+            setCustomQuestions(questions);
+            setAppState({ view: 'creator_profile_setup' });
+          }}
+          onBack={() => setAppState({ view: 'question_choice' })}
+        />;
+
       case 'creator_questionnaire':
-        return <QuestionnaireView userType="Creator" questions={questionsToUse} onComplete={handleCreatorQuestionnaireComplete} onBack={() => setAppState({ view: 'creator_profile_setup' })} activeTemplate={activeTemplate} internalAd={internalAdConfig['questionnaire']}/>;
+        const questionsForCreator = customQuestions || activeTemplate?.questions;
+        if (!questionsForCreator) return <p>Error: No questions found.</p>;
+        return <QuestionnaireView questions={questionsForCreator} onComplete={handleCreatorQuestionnaireComplete} userType="Creator" onBack={() => setAppState({ view: 'creator_profile_setup' })} activeTemplate={activeTemplate} internalAd={internalAdConfig['questionnaire']}/>;
+
       case 'share':
-        if (!creatorProfile || !creatorAnswers || !activeTemplate) { goToHome(); return null; }
-        return <ShareAndPublishView creatorProfile={creatorProfile} creatorAnswers={creatorAnswers} questionsUsed={questionsToUse} onBack={() => setAppState({ view: 'creator_questionnaire'})} internalAd={internalAdConfig['share']} activeTemplate={activeTemplate}/>;
+        return <ShareAndPublishView sessionData={appState.sessionData} onBack={resetToHome} internalAd={internalAdConfig['share']} />;
 
-      // Partner Flow
       case 'partner_profile_setup':
-        return <ProfileSetupView userType="Partner" onSave={handlePartnerProfileSave} onBack={goToHome} activeTemplate={sessionData ? { ...initialOfficialTemplates[0], title: sessionData.quizTitle } as QuizTemplate : null} />;
+        // FIX: Cast to unknown first to satisfy TypeScript when creating a partial QuizTemplate. The view only requires `title` and `analysisConfig` from the template.
+        return <ProfileSetupView userType="Partner" onSave={(partnerProfile) => setAppState({ view: 'partner_questionnaire', sessionData: appState.sessionData, partnerProfile })} onBack={resetToHome} activeTemplate={{...appState.sessionData.analysisConfig, title: appState.sessionData.quizTitle} as unknown as QuizTemplate} />;
+      
       case 'partner_questionnaire':
-        if (!sessionData) return <p>Error: Session data not found.</p>;
-        return <QuestionnaireView userType="Partner" questions={sessionData.questionsUsed} onComplete={handlePartnerQuestionnaireComplete} onBack={() => setAppState({ view: 'partner_profile_setup'})} activeTemplate={{ ...initialOfficialTemplates[0], title: sessionData.quizTitle } as QuizTemplate} internalAd={internalAdConfig['questionnaire']}/>;
+          // FIX: Cast to unknown first to satisfy TypeScript when creating a partial QuizTemplate. The view only requires `title` from the template.
+          return <QuestionnaireView questions={appState.sessionData.questionsUsed} onComplete={(answers) => handlePartnerQuestionnaireComplete(answers, appState.sessionData, appState.partnerProfile)} userType="Partner" onBack={() => setAppState({ view: 'partner_profile_setup', sessionData: appState.sessionData })} activeTemplate={{...appState.sessionData.analysisConfig, title: appState.sessionData.quizTitle} as unknown as QuizTemplate} internalAd={internalAdConfig['questionnaire']}/>;
+
       case 'partner_finish':
-        if (!appState.resultData) { goToHome(); return null; }
-        return <PartnerFinishView resultData={appState.resultData} onBackToHome={goToHome} onResultCodeGenerated={handleResultCodeGenerated} />;
+          return <PartnerFinishView resultData={appState.resultData} onResultCodeGenerated={handleResultCodeGenerated} />;
 
-      // Results
       case 'results':
-        if (!resultData) { goToHome(); return null; }
-        return <ResultsView resultData={resultData} onBackToHome={goToHome} internalAdConfig={internalAdConfig} />;
-
-      // Admin
+        return <ResultsView resultData={appState.resultData} onBackToHome={resetToHome} internalAdConfig={internalAdConfig} />;
+      
       case 'admin_login':
-        return <AdminLoginView onLoginSuccess={() => setAppState({ view: 'admin_dashboard' })} onBack={goToHome} />;
-      case 'admin_dashboard':
-        return <AdminDashboardView templates={quizTemplates} setTemplates={setQuizTemplates} adSenseConfig={adSenseConfig} setAdSenseConfig={setAdSenseConfig} internalAdConfig={internalAdConfig} setInternalAdConfig={setInternalAdConfig} siteImages={siteImages} setSiteImages={setSiteImages} staticPages={staticPages} setStaticPages={setStaticPages} onLogout={goToHome} />;
+          return <AdminLoginView onLoginSuccess={() => { setIsAdminLoggedIn(true); window.location.hash = '#/admin'; }} onBack={resetToHome} />;
 
-      // Static Pages
+      case 'admin_dashboard':
+          if (!isAdminLoggedIn) { setAppState({ view: 'admin_login' }); return null; }
+          // FIX: Pass the imported `officialTemplates` to the `AdminDashboardView` to satisfy the `templates` prop requirement.
+          return <AdminDashboardView templates={officialTemplates} adSenseConfig={adSenseConfig} setAdSenseConfig={setAdSenseConfig} internalAdConfig={internalAdConfig} setInternalAdConfig={setInternalAdConfig} siteImages={siteImages} setSiteImages={setSiteImages} staticPages={staticPages} setStaticPages={setStaticPages} onLogout={() => { setIsAdminLoggedIn(false); resetToHome(); }}/>;
+          
       case 'static_page':
-        let title = '';
-        switch(appState.page) {
-            case 'about': title = 'About Us'; break;
-            case 'contact': title = 'Contact Us'; break;
-            case 'privacy': title = 'Privacy Policy'; break;
-            case 'terms': title = 'Terms & Conditions'; break;
-        }
-        return <StaticPageView title={title} content={<div dangerouslySetInnerHTML={{ __html: staticPages[appState.page] || ''}} />} onBack={goToHome} />
+          const pageKey = appState.page;
+          return <StaticPageView title={pageKey.charAt(0).toUpperCase() + pageKey.slice(1).replace('_', ' ')} content={<div dangerouslySetInnerHTML={{ __html: staticPages[pageKey] || '' }} />} onBack={resetToHome} />;
 
       default:
-        return <div onClick={goToHome}>Unknown state. Click to go home.</div>;
+        return <HomeView onStartCreator={handleStartCreator} siteImages={siteImages} />;
     }
   };
+  
+  const openStaticPage = (page: 'about' | 'contact' | 'privacy' | 'terms') => window.location.hash = `#/page/${page}`;
 
   return (
-    <div className="bg-rose-50 min-h-screen font-sans text-gray-800">
-        <div className="container mx-auto p-4 md:p-8 max-w-2xl">
-            <header className="text-center mb-8 cursor-pointer" onClick={goToHome}>
-                <h1 className="text-4xl md:text-5xl font-bold text-pink-600 tracking-tight">Marathi Bayko</h1>
-                <p className="text-gray-500 mt-2">How well do you know your partner?</p>
-            </header>
-            <main>
-                {renderContent()}
-            </main>
-             <footer className="text-center mt-12 text-sm text-gray-400">
-                <div className="flex justify-center gap-4 mb-4">
-                    <button onClick={() => handleViewStaticPage('about')} className="hover:text-pink-600 hover:underline">About</button>
-                    <button onClick={() => handleViewStaticPage('contact')} className="hover:text-pink-600 hover:underline">Contact</button>
-                    <button onClick={() => handleViewStaticPage('privacy')} className="hover:text-pink-600 hover:underline">Privacy</button>
-                    <button onClick={() => handleViewStaticPage('terms')} className="hover:text-pink-600 hover:underline">Terms</button>
-                    <button onClick={() => handleViewStaticPage('admin')} className="hover:text-pink-600 hover:underline">Admin</button>
-                </div>
-                <div className="mb-6">
-                  <button 
-                    onClick={goToHome} 
-                    className="bg-pink-500 text-white rounded-full w-14 h-14 flex items-center justify-center mx-auto shadow-lg hover:bg-pink-600 transform hover:scale-110 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 focus:ring-offset-rose-50"
-                    aria-label="Go to Home"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    <div className="bg-rose-50 min-h-screen font-sans text-gray-800 flex flex-col">
+       <header className="text-center pt-8 cursor-pointer" onClick={resetToHome}>
+          <h1 className="text-4xl md:text-5xl font-bold text-pink-600 tracking-tight">Marathi Bayko</h1>
+          <p className="text-gray-500 mt-2">How well do you know your partner?</p>
+      </header>
+      <main className="flex-grow">
+        <div className="container mx-auto p-4 max-w-2xl">
+          {renderContent()}
+        </div>
+      </main>
+      <footer className="w-full text-center py-6 text-sm text-gray-500">
+        <div className="container mx-auto max-w-2xl px-4">
+            <div className="flex justify-center items-center space-x-4 mb-4">
+                <button onClick={() => openStaticPage('about')} className="hover:text-pink-600">About</button>
+                <button onClick={() => openStaticPage('contact')} className="hover:text-pink-600">Contact</button>
+                <button onClick={() => openStaticPage('privacy')} className="hover:text-pink-600">Privacy</button>
+                <button onClick={() => openStaticPage('terms')} className="hover:text-pink-600">Terms</button>
+                <button onClick={() => window.location.hash = '#/admin'} className="hover:text-pink-600">Admin</button>
+            </div>
+             <div className="mb-6">
+                  <button onClick={resetToHome} className="bg-pink-500 text-white rounded-full w-14 h-14 flex items-center justify-center mx-auto shadow-lg hover:bg-pink-600 transform hover:scale-110 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 focus:ring-offset-rose-50" aria-label="Go to Home">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
                   </button>
                 </div>
-                <p>&copy; {new Date().getFullYear()} Marathi Bayko. All Rights Reserved.</p>
-            </footer>
+            <p>&copy; {new Date().getFullYear()} Marathi Bayko. All rights reserved.</p>
         </div>
+      </footer>
     </div>
   );
-};
+}
 
 export default App;

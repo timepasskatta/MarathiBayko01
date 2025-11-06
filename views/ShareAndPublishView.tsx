@@ -1,77 +1,67 @@
+
 import React, { useState, useEffect } from 'react';
-import { Profile, Answers, Question, QuizTemplate, SessionData, InternalAd } from '../types.ts';
+// FIX: Added .ts extension to fix module resolution issue.
+import { SessionData, InternalAd } from '../types.ts';
+// FIX: Added .ts extension to fix module resolution issue.
 import { encodeObjectToBase64 } from '../utils/helpers.ts';
-import Button from '../components/Button.tsx';
+// FIX: Added .tsx extension to fix module resolution issue.
 import Card from '../components/Card.tsx';
+// FIX: Added .tsx extension to fix module resolution issue.
+import Button from '../components/Button.tsx';
+// FIX: Added .tsx extension to fix module resolution issue.
 import BackButton from '../components/BackButton.tsx';
+// FIX: Added .tsx extension to fix module resolution issue.
 import InternalAdBanner from '../components/InternalAdBanner.tsx';
 
 interface ShareAndPublishViewProps {
-  creatorProfile: Profile;
-  creatorAnswers: Answers;
-  questionsUsed: Question[];
+  sessionData: SessionData;
   onBack: () => void;
   internalAd?: InternalAd;
-  activeTemplate: QuizTemplate;
 }
 
-const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ creatorProfile, creatorAnswers, questionsUsed, onBack, internalAd, activeTemplate }) => {
-  const [invitationCode, setInvitationCode] = useState<string | null>(null);
-  const [copied, setCopied] = useState<boolean>(false);
+const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ sessionData, onBack, internalAd }) => {
+  const [shareLink, setShareLink] = useState('');
+  const [copySuccess, setCopySuccess] = useState('');
 
   useEffect(() => {
-    const sessionData: SessionData = {
-      creatorProfile,
-      creatorAnswers,
-      questionsUsed,
-      analysisConfig: activeTemplate.analysisConfig,
-      quizTitle: activeTemplate.title,
-    };
-
-    const generateCode = async () => {
-      try {
-        const encodedData = await encodeObjectToBase64(sessionData);
-        setInvitationCode(encodedData);
-      } catch (error) {
-        console.error("Error encoding session data:", error);
-        setInvitationCode("Error: Could not generate code.");
-      }
-    };
-    generateCode();
-  }, [creatorProfile, creatorAnswers, questionsUsed, activeTemplate]);
+    const code = encodeObjectToBase64(sessionData);
+    const link = `${window.location.origin}${window.location.pathname}#/session/${code}`;
+    setShareLink(link);
+  }, [sessionData]);
 
   const handleCopy = () => {
-    if (invitationCode) {
-      navigator.clipboard.writeText(invitationCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    navigator.clipboard.writeText(shareLink);
+    setCopySuccess('Link copied to clipboard!');
+    setTimeout(() => setCopySuccess(''), 2000);
   };
 
   return (
     <div className="space-y-6">
-      <Card className="text-center relative pt-12">
+      <Card className="relative pt-12 text-center">
         <BackButton onClick={onBack} />
-        <h2 className="text-2xl font-bold mb-4">✅ Your Quiz is Ready!</h2>
-        <p className="text-gray-600 mb-6">
-          Now, copy the special code below and send it to your partner. They'll use it on the home page to start the quiz.
-        </p>
-
-        <div className="bg-rose-50 border-2 border-dashed border-rose-200 rounded-lg p-4 mb-6">
-          <p className="text-gray-500 text-sm mb-2">Your Unique Invitation Code</p>
-          <textarea
+        <h2 className="text-2xl font-bold mb-2">You're All Set!</h2>
+        <p className="text-gray-500 mb-6">Now, share this link with your partner so they can answer the questions.</p>
+        
+        <div className="bg-rose-50 p-4 rounded-lg">
+          <input
+            type="text"
             readOnly
-            className="w-full h-24 p-2 font-mono text-xs text-gray-600 bg-transparent border-none focus:ring-0 resize-none text-center"
-            value={invitationCode || 'Generating...'}
+            value={shareLink}
+            className="w-full p-2 border rounded-md text-center text-gray-600 bg-white"
           />
         </div>
-        
-        <Button onClick={handleCopy} disabled={!invitationCode || invitationCode.startsWith('Error')}>
-          {copied ? 'Copied to Clipboard!' : 'Copy Invitation Code'}
-        </Button>
+
+        <div className="mt-4">
+          <Button onClick={handleCopy}>
+            {copySuccess ? 'Copied!' : 'Copy Link'}
+          </Button>
+        </div>
+        {copySuccess && <p className="text-green-500 text-sm mt-2">{copySuccess}</p>}
       </Card>
-      
       <InternalAdBanner ad={internalAd} />
+      <div className="text-center">
+          <Button onClick={onBack} variant="secondary">Back to Home</Button>
+      </div>
     </div>
   );
 };

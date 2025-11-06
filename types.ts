@@ -58,11 +58,11 @@ export type AppState =
   | { view: 'question_choice' }
   | { view: 'custom_question_editor' }
   | { view: 'creator_questionnaire' }
-  | { view: 'share' }
-  | { view: 'partner_profile_setup' }
-  | { view: 'partner_questionnaire' }
+  | { view: 'share'; sessionData: SessionData }
+  | { view: 'partner_profile_setup'; sessionData: SessionData }
+  | { view: 'partner_questionnaire'; sessionData: SessionData; partnerProfile: Profile }
   | { view: 'partner_finish'; resultData: ResultData }
-  | { view: 'results' }
+  | { view: 'results'; resultData: ResultData }
   | { view: 'admin_login' }
   | { view: 'admin_dashboard' }
   | { view: 'static_page'; page: 'about' | 'contact' | 'privacy' | 'terms' };
@@ -83,5 +83,4 @@ export interface InternalAd {
 
 export interface SiteImagesConfig {
     createQuiz: string;
-    joinQuiz: string;
 }
