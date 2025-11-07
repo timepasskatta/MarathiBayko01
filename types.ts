@@ -44,6 +44,7 @@ export interface SessionData {
   questionsUsed: Question[];
   analysisConfig: QuizTemplate['analysisConfig'];
   quizTitle: string;
+  templateId?: string;
 }
 
 export interface ResultData extends SessionData {

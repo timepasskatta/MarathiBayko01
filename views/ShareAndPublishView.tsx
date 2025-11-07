@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SessionData, InternalAd } from '../types.ts';
+import { SessionData, InternalAd, Question } from '../types.ts';
 import { encodeObjectToBase64 } from '../utils/helpers.ts';
 import Button from '../components/Button.tsx';
 import Card from '../components/Card.tsx';
@@ -12,6 +12,8 @@ interface ShareAndPublishViewProps {
   internalAd?: InternalAd;
 }
 
+type EncodableSessionData = Omit<SessionData, 'questionsUsed'> & { questionsUsed?: Question[] };
+
 const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ sessionData, onBack, internalAd }) => {
   const [invitationLink, setInvitationLink] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
@@ -19,7 +21,15 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ sessionData, 
   useEffect(() => {
       const generateLink = async () => {
         try {
-          const encodedData = await encodeObjectToBase64(sessionData);
+          const payload: EncodableSessionData = { ...sessionData };
+
+          // If it's an official quiz (identified by templateId),
+          // we don't need to include the bulky questions array to shorten the link.
+          if (payload.templateId) {
+            delete payload.questionsUsed;
+          }
+
+          const encodedData = await encodeObjectToBase64(payload);
           const link = `${window.location.origin}${window.location.pathname}#/session/${encodedData}`;
           setInvitationLink(link);
         } catch (error) {

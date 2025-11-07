@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage.ts';
 import { initialQuestions } from './data/questions.ts';
-import { officialTemplates as initialOfficialTemplates } from './data/officialTemplates.ts';
+import { officialTemplates } from './data/officialTemplates.ts';
 import { 
     Question, 
     Profile, 
@@ -73,7 +73,26 @@ const App: React.FC = () => {
         if (hash.startsWith('#/session/')) {
             const data = hash.substring('#/session/'.length);
             try {
-                const session = await decodeBase64ToObject<SessionData>(data);
+                const decodedPayload = await decodeBase64ToObject<any>(data);
+
+                // Reconstruct the full session data
+                let session: SessionData;
+
+                if (decodedPayload.templateId) {
+                    // Smart link: find template and add questions
+                    const template = officialTemplates.find(t => t.id === decodedPayload.templateId);
+                    if (!template) {
+                        throw new Error(`Official quiz template '${decodedPayload.templateId}' not found.`);
+                    }
+                    session = {
+                        ...decodedPayload,
+                        questionsUsed: template.questions,
+                    };
+                } else {
+                    // Legacy/Custom link: questions are already included
+                    session = decodedPayload as SessionData;
+                }
+
                 if (validateSessionData(session)) {
                     setAppState({ view: 'partner_profile_setup', sessionData: session });
                 } else {
@@ -163,7 +182,7 @@ const App: React.FC = () => {
         createdAt: new Date().toISOString(),
         imageUrl: '',
         questions: [],
-        analysisConfig: initialOfficialTemplates[0].analysisConfig,
+        analysisConfig: officialTemplates[0].analysisConfig,
       };
       setActiveTemplate(ownQuizTemplate);
       setQuestionsToUse([]);
@@ -196,6 +215,7 @@ const App: React.FC = () => {
       questionsUsed: questionsToUse,
       analysisConfig: activeTemplate!.analysisConfig,
       quizTitle: activeTemplate!.title,
+      templateId: activeTemplate?.isOfficial ? activeTemplate.id : undefined,
     };
     setAppState({ view: 'share', sessionData });
   };
