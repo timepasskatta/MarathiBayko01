@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
-import { Question, Answers, QuizTemplate } from '../types';
-import Card from '../components/Card';
-import ProgressBar from '../components/ProgressBar';
-import BackButton from '../components/BackButton';
-import Button from '../components/Button';
+import { Question, Answers, QuizTemplate, Profile } from '../types.ts';
+import Button from '../components/Button.tsx';
+import Card from '../components/Card.tsx';
+import ProgressBar from '../components/ProgressBar.tsx';
+import BackButton from '../components/BackButton.tsx';
 
 interface QuestionnaireViewProps {
-  userType: 'Creator' | 'Partner';
   questions: Question[];
   onComplete: (answers: Answers) => void;
+  userType: 'Creator' | 'Partner';
   onBack: () => void;
   activeTemplate: QuizTemplate | null;
+  creatorProfile: Profile;
 }
 
-const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({ userType, questions, onComplete, onBack, activeTemplate }) => {
+const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({ questions, onComplete, userType, onBack, activeTemplate, creatorProfile }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [error, setError] = useState('');
@@ -41,23 +42,25 @@ const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({ userType, questio
   };
 
   if (!currentQuestion) {
-    return <Card><p>No active questions available.</p></Card>;
+    return <Card><p>No active questions available. Please go back and create some questions.</p></Card>;
   }
 
   return (
     <Card className="relative pt-32">
-        <div className="absolute top-6 left-6 right-6">
-            <BackButton onClick={onBack} />
-            <div className="text-center">
-                <p className="text-sm font-bold uppercase text-pink-500 tracking-wider">Playing Quiz</p>
-                <h2 className="text-xl font-bold text-gray-800 truncate">{activeTemplate?.title}</h2>
+        <BackButton onClick={onBack} />
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 w-4/5 space-y-2">
+             <div className="text-center">
+              <p className="text-sm font-semibold text-pink-600">PLAYING QUIZ</p>
+              <h2 className="text-lg font-bold truncate">{activeTemplate?.title}</h2>
             </div>
-            <div className="mt-4">
-                <ProgressBar current={currentQuestionIndex + 1} total={activeQuestions.length} />
-                <p className="text-center text-sm text-gray-500 mt-2">
-                    Question {currentQuestionIndex + 1} of {activeQuestions.length} ({userType})
-                </p>
-            </div>
+            <ProgressBar current={currentQuestionIndex + 1} total={activeQuestions.length} />
+            <p className="text-center text-sm text-gray-500">
+            Question {currentQuestionIndex + 1} of {activeQuestions.length} ({creatorProfile.name})
+            </p>
+        </div>
+        <div className="text-center mb-6">
+            <h2 className="text-lg font-bold text-pink-600 mb-2">{userType === 'Creator' ? 'About You' : 'Guess Their Answer'}</h2>
+            <p className="text-gray-500 text-sm">{userType === 'Creator' ? 'Answer these questions about yourself.' : "Try to guess what your partner's answers are."}</p>
         </div>
         
         <h3 className="text-xl md:text-2xl font-bold text-center mb-6 min-h-[6rem] flex items-center justify-center">
@@ -79,9 +82,9 @@ const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({ userType, questio
             ))}
         </div>
         {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
-        <div className="mt-8">
-            <Button onClick={handleNext} disabled={!selectedAnswer}>
-                {currentQuestionIndex < activeQuestions.length - 1 ? 'Next' : 'Finish'}
+        <div className="mt-8 flex gap-2">
+            <Button onClick={handleNext} disabled={!selectedAnswer} className="w-full">
+            {currentQuestionIndex < activeQuestions.length - 1 ? 'Next' : 'Finish'}
             </Button>
         </div>
     </Card>

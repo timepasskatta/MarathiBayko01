@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useLocalStorage } from './hooks/useLocalStorage';
-import { officialTemplates } from './data/officialTemplates';
+import { useLocalStorage } from './hooks/useLocalStorage.ts';
+import { initialQuestions } from './data/questions.ts';
+import { officialTemplates as initialOfficialTemplates } from './data/officialTemplates.ts';
 import { 
     Question, 
     Profile, 
@@ -12,18 +13,20 @@ import {
     AdSenseConfig, 
     InternalAd,
     SiteImagesConfig
-} from './types';
-import { decodeBase64ToObject, validateSessionData, validateResultData } from './utils/helpers';
+} from './types.ts';
+import { decodeBase64ToObject, validateSessionData, validateResultData } from './utils/helpers.ts';
+
 
 // Views
-import HomeView from './views/HomeView';
-import ProfileSetupView from './views/ProfileSetupView';
-import QuestionnaireView from './views/QuestionnaireView';
-import ShareAndPublishView from './views/ShareAndPublishView';
-import ResultsView from './views/ResultsView';
-import AdminLoginView from './views/AdminLoginView';
-import AdminDashboardView from './views/AdminDashboardView';
-import StaticPageView from './views/StaticPageView';
+import HomeView from './views/HomeView.tsx';
+import ProfileSetupView from './views/ProfileSetupView.tsx';
+import CustomQuestionEditorView from './views/CustomQuestionEditorView.tsx';
+import QuestionnaireView from './views/QuestionnaireView.tsx';
+import ShareAndPublishView from './views/ShareAndPublishView.tsx';
+import ResultsView from './views/ResultsView.tsx';
+import AdminLoginView from './views/AdminLoginView.tsx';
+import AdminDashboardView from './views/AdminDashboardView.tsx';
+import StaticPageView from './views/StaticPageView.tsx';
 
 // Default static page content
 const defaultAboutContent = `
@@ -40,71 +43,76 @@ const defaultTermsContent = `
 `;
 
 const App: React.FC = () => {
+  // State Management
   const [appState, setAppState] = useState<AppState>({ view: 'home' });
+  const [questionsToUse, setQuestionsToUse] = useState<Question[]>([]);
   const [activeTemplate, setActiveTemplate] = useState<QuizTemplate | null>(null);
   
-  const [adSenseConfig, setAdSenseConfig] = useLocalStorage<AdSenseConfig>('adsense-config', { enabled: false, clientId: 'ca-pub-YOUR_CLIENT_ID', adSlotId: 'YOUR_AD_SLOT_ID', verificationCode: '' });
+  // Persisted State
+  const [adSenseConfig, setAdSenseConfig] = useLocalStorage<AdSenseConfig>('adsense-config', { enabled: false, clientId: '', adSlotId: '', verificationCode: '' });
   const [internalAdConfig, setInternalAdConfig] = useLocalStorage<Record<string, InternalAd>>('internal-ad-config', {
-    home_top_1x1: { enabled: false, imageUrl: '', redirectUrl: '', title: 'Home Ad (1:1)', aspectRatio: '1:1' },
-    share_bottom_1x1: { enabled: false, imageUrl: '', redirectUrl: '', title: 'Share Page Ad (1:1)', aspectRatio: '1:1' },
-    results_middle_1x1: { enabled: false, imageUrl: '', redirectUrl: '', title: 'Results Page Ad (1:1)', aspectRatio: '1:1' },
+      home_top: { enabled: false, imageUrl: '', redirectUrl: '', title: '', description: '', aspectRatio: '1:1' },
+      share_page: { enabled: false, imageUrl: '', redirectUrl: '', title: '', description: '', aspectRatio: '1:1' },
+      results_page: { enabled: false, imageUrl: '', redirectUrl: '', title: '', description: '', aspectRatio: '1:1' },
   });
+   const [siteImages, setSiteImages] = useLocalStorage<SiteImagesConfig>('site-images-config', {
+        createQuiz: 'https://i.postimg.cc/Mps3pbNt/100071928-1.jpg'
+    });
+
   const [staticPages, setStaticPages] = useLocalStorage<Record<string, string>>('static-pages-content', {
     about: defaultAboutContent,
     contact: defaultContactContent,
     privacy: defaultPrivacyContent,
     terms: defaultTermsContent
   });
-  const [siteImages, setSiteImages] = useLocalStorage<SiteImagesConfig>('site-images-config', {
-      createQuiz: 'https://i.postimg.cc/Mps3pbNt/100071928-1.jpg'
-  });
 
-  const handleHashChange = async () => {
-    const hash = window.location.hash;
-    if (hash.startsWith('#/session/')) {
-        const data = hash.replace('#/session/', '');
-        try {
-            const sessionData = await decodeBase64ToObject<SessionData>(data);
-            if (validateSessionData(sessionData)) {
-                setAppState({ view: 'partner_profile_setup', sessionData });
-            } else {
-                throw new Error("Invalid session data structure.");
-            }
-        } catch (error) {
-            console.error("Error decoding session data:", error);
-            alert("The invitation link is invalid or corrupted. Please ask for a new one.");
-            goToHome();
-        }
-    } else if (hash.startsWith('#/result/')) {
-        const data = hash.replace('#/result/', '');
-        try {
-            const resultData = await decodeBase64ToObject<ResultData>(data);
-            if (validateResultData(resultData)) {
-                setAppState({ view: 'results', resultData });
-            } else {
-                throw new Error("Invalid result data structure.");
-            }
-        } catch (error) {
-            console.error("Error decoding result data:", error);
-            alert("The result link is invalid or corrupted.");
-            goToHome();
-        }
-    } else {
-        // Only reset to home if there is a hash that is not a session or result link
-        if (hash && hash !== '#') {
-            goToHome();
-        }
-    }
-  };
-
+  // --- App Initialization & Routing ---
   useEffect(() => {
+    const handleHashChange = async () => {
+        const hash = window.location.hash;
+        if (hash.startsWith('#/session/')) {
+            const data = hash.substring('#/session/'.length);
+            try {
+                const session = await decodeBase64ToObject<SessionData>(data);
+                if (validateSessionData(session)) {
+                    setAppState({ view: 'partner_profile_setup', sessionData: session });
+                } else {
+                    alert('Invalid or corrupted quiz link.');
+                    goToHome();
+                }
+            } catch (e) {
+                console.error("Error decoding session link:", e);
+                alert('Invalid or corrupted quiz link.');
+                goToHome();
+            }
+        } else if (hash.startsWith('#/result/')) {
+            const data = hash.substring('#/result/'.length);
+            try {
+                const result = await decodeBase64ToObject<ResultData>(data);
+                if (validateResultData(result)) {
+                     setAppState({ view: 'results', resultData: result });
+                } else {
+                    alert('Invalid or corrupted result link.');
+                    goToHome();
+                }
+            } catch (e) {
+                console.error("Error decoding result link:", e);
+                alert('Invalid or corrupted result link.');
+                goToHome();
+            }
+        }
+    };
+
     window.addEventListener('hashchange', handleHashChange);
     handleHashChange(); // Check hash on initial load
+
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+
+  // --- Dynamic Head Scripts ---
   useEffect(() => {
-    if (adSenseConfig.enabled && adSenseConfig.clientId && !adSenseConfig.clientId.includes('YOUR_CLIENT_ID')) {
+    if (adSenseConfig.enabled && adSenseConfig.clientId) {
         const script = document.createElement('script');
         script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adSenseConfig.clientId}`;
         script.async = true;
@@ -125,106 +133,136 @@ const App: React.FC = () => {
         meta.content = adSenseConfig.verificationCode;
         document.head.appendChild(meta);
       }
-    } else {
-      if(existingTag) {
-        document.head.removeChild(existingTag);
-      }
+    } else if (existingTag) {
+      document.head.removeChild(existingTag);
     }
   }, [adSenseConfig.verificationCode]);
 
+
+  // --- Navigation and State Handlers ---
   const goToHome = () => {
-    setActiveTemplate(null);
     window.location.hash = '';
     setAppState({ view: 'home' });
   };
   
-  const handleStartCreator = (template: QuizTemplate) => {
-    setActiveTemplate(template);
+  // Creator Flow
+   const handleStartCreator = (template?: QuizTemplate) => {
+    if(template){
+      setActiveTemplate(template);
+      setQuestionsToUse(template.questions);
+    } else {
+      // Logic for "Create Your Own"
+      const ownQuizTemplate: QuizTemplate = {
+        id: 'custom',
+        title: 'Your Custom Quiz',
+        description: '',
+        creatorName: '',
+        isOfficial: false,
+        isPublic: false,
+        status: 'approved',
+        createdAt: new Date().toISOString(),
+        imageUrl: '',
+        questions: [],
+        analysisConfig: initialOfficialTemplates[0].analysisConfig,
+      };
+      setActiveTemplate(ownQuizTemplate);
+      setQuestionsToUse([]);
+    }
     setAppState({ view: 'creator_profile_setup' });
   };
 
   const handleCreatorProfileSave = (profile: Profile) => {
+    const updatedTemplate = { ...activeTemplate!, creatorName: profile.name };
+    setActiveTemplate(updatedTemplate);
+    // FIX: Correctly route to question editor for custom quizzes
+    if (activeTemplate?.id === 'custom') {
+      setAppState({ view: 'custom_question_editor', creatorProfile: profile });
+    } else {
+      setAppState({ view: 'creator_questionnaire', creatorProfile: profile });
+    }
+  };
+
+  const handleCustomQuestionsFinish = (questions: Question[], profile: Profile) => {
+    setQuestionsToUse(questions);
+    const updatedTemplate = { ...activeTemplate!, questions };
+    setActiveTemplate(updatedTemplate);
     setAppState({ view: 'creator_questionnaire', creatorProfile: profile });
   };
 
-  const handleCreatorQuestionnaireComplete = (answers: Answers) => {
-    if (appState.view === 'creator_questionnaire' && activeTemplate) {
-      setAppState({ view: 'share', sessionData: {
-          creatorProfile: appState.creatorProfile,
-          creatorAnswers: answers,
-          questionsUsed: activeTemplate.questions,
-          quizTitle: activeTemplate.title,
-          analysisConfig: activeTemplate.analysisConfig,
-      }});
-    }
+  const handleCreatorQuestionnaireComplete = (answers: Answers, profile: Profile) => {
+    const sessionData: SessionData = {
+      creatorProfile: profile,
+      creatorAnswers: answers,
+      questionsUsed: questionsToUse,
+      analysisConfig: activeTemplate!.analysisConfig,
+      quizTitle: activeTemplate!.title,
+    };
+    setAppState({ view: 'share', sessionData });
   };
   
-  const handlePartnerProfileSave = (profile: Profile) => {
-    if (appState.view === 'partner_profile_setup') {
-      setAppState({ view: 'partner_questionnaire', sessionData: appState.sessionData, partnerProfile: profile });
-    }
+  // Partner Flow
+  const handlePartnerProfileSave = (profile: Profile, session: SessionData) => {
+    setAppState({ view: 'partner_questionnaire', sessionData: session, partnerProfile: profile });
+  };
+  const handlePartnerQuestionnaireComplete = (answers: Answers, session: SessionData, partnerProfile: Profile) => {
+    const finalResultData: ResultData = { 
+        ...session, 
+        partnerProfile, 
+        partnerAnswers: answers 
+    };
+    setAppState({ view: 'results', resultData: finalResultData });
   };
 
-  const handlePartnerQuestionnaireComplete = (answers: Answers) => {
-    if (appState.view === 'partner_questionnaire') {
-        const finalResultData: ResultData = {
-            ...appState.sessionData,
-            partnerProfile: appState.partnerProfile,
-            partnerAnswers: answers,
-        };
-        // Removed the intermediate "PartnerFinishView" to simplify the flow
-        window.location.hash = `#`; // Clear session hash
-        setAppState({ view: 'results', resultData: finalResultData });
-    }
+  // Admin Flow
+  const handleAdminLogin = () => {
+    window.location.hash = 'admin';
+    setAppState({ view: 'admin_login' });
   };
-
+  const handleLoginSuccess = () => setAppState({ view: 'admin_dashboard' });
+  
+  // Static Page Flow
   const handleViewStaticPage = (page: 'about' | 'contact' | 'privacy' | 'terms') => {
       setAppState({ view: 'static_page', page });
   };
-  
-  const handleAdminClick = () => setAppState({ view: 'admin_login' });
 
+  // --- View Rendering ---
   const renderContent = () => {
     switch (appState.view) {
       case 'home':
         return <HomeView onStartCreator={handleStartCreator} siteImages={siteImages} />;
       
+      // Creator Flow
       case 'creator_profile_setup':
         return <ProfileSetupView userType="Creator" onSave={handleCreatorProfileSave} onBack={goToHome} activeTemplate={activeTemplate} />;
-      
+      case 'custom_question_editor':
+        return <CustomQuestionEditorView onFinish={(questions) => handleCustomQuestionsFinish(questions, appState.creatorProfile)} onBack={() => setAppState({ view: 'creator_profile_setup' })} />;
       case 'creator_questionnaire':
-        return <QuestionnaireView userType="Creator" questions={activeTemplate!.questions} onComplete={handleCreatorQuestionnaireComplete} onBack={() => setAppState({ view: 'creator_profile_setup' })} activeTemplate={activeTemplate} />;
-      
+         return <QuestionnaireView userType="Creator" questions={questionsToUse} onComplete={(answers) => handleCreatorQuestionnaireComplete(answers, appState.creatorProfile)} onBack={() => setAppState({ view: 'creator_profile_setup' })} activeTemplate={activeTemplate} creatorProfile={appState.creatorProfile} />;
       case 'share':
-        return <ShareAndPublishView sessionData={appState.sessionData} onBack={() => setAppState({ view: 'creator_questionnaire', creatorProfile: appState.sessionData.creatorProfile })} internalAd={internalAdConfig['share_bottom_1x1']} />;
+        return <ShareAndPublishView sessionData={appState.sessionData} onBack={() => setAppState({ view: 'creator_questionnaire', creatorProfile: appState.sessionData.creatorProfile })} internalAd={internalAdConfig['share_page']} />;
 
+      // Partner Flow
       case 'partner_profile_setup':
-        return <ProfileSetupView userType="Partner" onSave={handlePartnerProfileSave} onBack={goToHome} activeTemplate={{ title: appState.sessionData.quizTitle } as QuizTemplate} />;
-      
+        return <ProfileSetupView userType="Partner" onSave={(profile) => handlePartnerProfileSave(profile, appState.sessionData)} onBack={goToHome} activeTemplate={{id: 'session-quiz', title: appState.sessionData.quizTitle, description: '', creatorName: appState.sessionData.creatorProfile.name, questions: appState.sessionData.questionsUsed, isPublic: false, isOfficial: false, createdAt: new Date().toISOString(), status: 'approved', imageUrl: '', analysisConfig: appState.sessionData.analysisConfig}} />;
       case 'partner_questionnaire':
-        return <QuestionnaireView userType="Partner" questions={appState.sessionData.questionsUsed} onComplete={handlePartnerQuestionnaireComplete} onBack={() => setAppState({ view: 'partner_profile_setup', sessionData: appState.sessionData })} activeTemplate={{ title: appState.sessionData.quizTitle } as QuizTemplate} />;
-      
-      case 'results':
-        return <ResultsView resultData={appState.resultData} onBackToHome={goToHome} internalAdConfig={internalAdConfig} adSenseConfig={adSenseConfig} />;
+        return <QuestionnaireView userType="Partner" questions={appState.sessionData.questionsUsed} onComplete={(answers) => handlePartnerQuestionnaireComplete(answers, appState.sessionData, appState.partnerProfile)} onBack={() => setAppState({ view: 'partner_profile_setup', sessionData: appState.sessionData})} activeTemplate={{id: 'session-quiz', title: appState.sessionData.quizTitle, description: '', creatorName: appState.sessionData.creatorProfile.name, questions: appState.sessionData.questionsUsed, isPublic: false, isOfficial: false, createdAt: new Date().toISOString(), status: 'approved', imageUrl: '', analysisConfig: appState.sessionData.analysisConfig}} creatorProfile={appState.partnerProfile} />;
 
+      // Results
+      case 'results':
+        return <ResultsView resultData={appState.resultData} onBackToHome={goToHome} adSenseConfig={adSenseConfig} internalAd={internalAdConfig['results_page']} />;
+
+      // Admin
       case 'admin_login':
-        return <AdminLoginView onLoginSuccess={() => setAppState({ view: 'admin_dashboard' })} onBack={goToHome} />;
-      
+        return <AdminLoginView onLoginSuccess={handleLoginSuccess} onBack={goToHome} />;
       case 'admin_dashboard':
         return <AdminDashboardView adSenseConfig={adSenseConfig} setAdSenseConfig={setAdSenseConfig} internalAdConfig={internalAdConfig} setInternalAdConfig={setInternalAdConfig} staticPages={staticPages} setStaticPages={setStaticPages} siteImages={siteImages} setSiteImages={setSiteImages} onLogout={goToHome} />;
-      
+
+      // Static Pages
       case 'static_page':
-        let title = '';
-        switch(appState.page) {
-            case 'about': title = 'About Us'; break;
-            case 'contact': title = 'Contact Us'; break;
-            case 'privacy': title = 'Privacy Policy'; break;
-            case 'terms': title = 'Terms & Conditions'; break;
-        }
-        return <StaticPageView title={title} content={<div dangerouslySetInnerHTML={{ __html: staticPages[appState.page] || ''}} />} onBack={goToHome} />
+        return <StaticPageView title={appState.page.charAt(0).toUpperCase() + appState.page.slice(1)} content={<div dangerouslySetInnerHTML={{ __html: staticPages[appState.page] || ''}} />} onBack={goToHome} />
 
       default:
-        return <div onClick={goToHome}>Loading or invalid state... Click to go home.</div>;
+        return <HomeView onStartCreator={handleStartCreator} siteImages={siteImages} />;
     }
   };
 
@@ -239,12 +277,12 @@ const App: React.FC = () => {
                 {renderContent()}
             </main>
              <footer className="text-center mt-12 text-sm text-gray-400">
-                <div className="flex justify-center gap-4 mb-4">
+                <div className="flex justify-center flex-wrap gap-4 mb-4">
                     <button onClick={() => handleViewStaticPage('about')} className="hover:text-pink-600 hover:underline">About</button>
                     <button onClick={() => handleViewStaticPage('contact')} className="hover:text-pink-600 hover:underline">Contact</button>
                     <button onClick={() => handleViewStaticPage('privacy')} className="hover:text-pink-600 hover:underline">Privacy</button>
                     <button onClick={() => handleViewStaticPage('terms')} className="hover:text-pink-600 hover:underline">Terms</button>
-                    <button onClick={handleAdminClick} className="hover:text-pink-600 hover:underline">Admin</button>
+                     <button onClick={handleAdminLogin} className="hover:text-pink-600 hover:underline">Admin</button>
                 </div>
                 <div className="mb-6">
                   <button 
@@ -252,8 +290,8 @@ const App: React.FC = () => {
                     className="bg-pink-500 text-white rounded-full w-14 h-14 flex items-center justify-center mx-auto shadow-lg hover:bg-pink-600 transform hover:scale-110 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 focus:ring-offset-rose-50"
                     aria-label="Go to Home"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                     </svg>
                   </button>
                 </div>

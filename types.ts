@@ -42,8 +42,8 @@ export interface SessionData {
   creatorProfile: Profile;
   creatorAnswers: Answers;
   questionsUsed: Question[];
-  quizTitle: string;
   analysisConfig: QuizTemplate['analysisConfig'];
+  quizTitle: string;
 }
 
 export interface ResultData extends SessionData {
@@ -55,14 +55,16 @@ export interface ResultData extends SessionData {
 export type AppState =
   | { view: 'home' }
   | { view: 'creator_profile_setup' }
-  | { view: 'creator_questionnaire', creatorProfile: Profile }
-  | { view: 'share', sessionData: SessionData }
-  | { view: 'partner_profile_setup', sessionData: SessionData }
-  | { view: 'partner_questionnaire', sessionData: SessionData, partnerProfile: Profile }
-  | { view: 'results', resultData: ResultData }
+  | { view: 'custom_question_editor'; creatorProfile: Profile }
+  | { view: 'creator_questionnaire'; creatorProfile: Profile }
+  | { view: 'share'; sessionData: SessionData }
+  | { view: 'partner_profile_setup'; sessionData: SessionData }
+  | { view: 'partner_questionnaire'; sessionData: SessionData; partnerProfile: Profile }
+  | { view: 'results'; resultData: ResultData }
   | { view: 'admin_login' }
   | { view: 'admin_dashboard' }
   | { view: 'static_page'; page: 'about' | 'contact' | 'privacy' | 'terms' };
+
 
 export interface AdSenseConfig {
     enabled: boolean;
@@ -76,10 +78,10 @@ export interface InternalAd {
     imageUrl: string;
     redirectUrl: string;
     title: string;
+    description: string;
     aspectRatio?: '16:9' | '1:1';
-    description?: string;
 }
 
 export interface SiteImagesConfig {
-  createQuiz: string;
+    createQuiz: string;
 }

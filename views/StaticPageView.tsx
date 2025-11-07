@@ -1,6 +1,6 @@
 import React from 'react';
-import Card from '../components/Card';
-import BackButton from '../components/BackButton';
+import Card from '../components/Card.tsx';
+import BackButton from '../components/BackButton.tsx';
 
 interface StaticPageViewProps {
     title: string;

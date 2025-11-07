@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { QuizTemplate, AdSenseConfig, InternalAd, SiteImagesConfig, Question } from '../types';
-import Button from '../components/Button';
-import Card from '../components/Card';
-import { officialTemplates } from '../data/officialTemplates';
+import { QuizTemplate, AdSenseConfig, InternalAd, Question, SiteImagesConfig } from '../types.ts';
+import Button from '../components/Button.tsx';
+import Card from '../components/Card.tsx';
+import { officialTemplates as initialOfficialTemplates } from '../data/officialTemplates.ts';
 
 interface AdminDashboardViewProps {
   adSenseConfig: AdSenseConfig;
@@ -25,29 +25,28 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   setStaticPages,
   siteImages,
   setSiteImages,
-  onLogout,
+  onLogout
 }) => {
-    const [activeTab, setActiveTab] = useState('publish');
+    const [activeTab, setActiveTab] = useState('templates');
     const [isEditorOpen, setIsEditorOpen] = useState(false);
+    const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
+    const [generatedCode, setGeneratedCode] = useState('');
     const [editingTemplate, setEditingTemplate] = useState<QuizTemplate | null>(null);
-    const [templates, setTemplates] = useState<QuizTemplate[]>(officialTemplates);
-    const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+    const [templates, setTemplates] = useState<QuizTemplate[]>(initialOfficialTemplates);
+    
+    // States for editing configs
+    const [currentAdSenseConfig, setCurrentAdSenseConfig] = useState(adSenseConfig);
+    const [currentInternalAdConfig, setCurrentInternalAdConfig] = useState(internalAdConfig);
+    const [currentStaticPages, setCurrentStaticPages] = useState(staticPages);
+    const [currentSiteImages, setCurrentSiteImages] = useState(siteImages);
 
+    // Handlers for template management
     const openEditor = (template: QuizTemplate | null) => {
       if (template) {
         setEditingTemplate(JSON.parse(JSON.stringify(template)));
       } else {
         setEditingTemplate({
-          id: `custom-${Date.now()}`,
-          title: '',
-          description: '',
-          creatorName: 'Marathi Bayko',
-          questions: [],
-          isPublic: true,
-          isOfficial: true,
-          createdAt: new Date().toISOString(),
-          status: 'approved',
-          imageUrl: '',
+          id: `new-${Date.now()}`, title: '', description: '', creatorName: 'Marathi Bayko', questions: [], isPublic: true, isOfficial: true, createdAt: new Date().toISOString(), status: 'approved', imageUrl: '',
           analysisConfig: { range0_25: '', range26_50: '', range51_75: '', range76_100: '' }
         });
       }
@@ -74,335 +73,185 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             setTemplates(templates.filter(t => t.id !== id));
         }
     };
-    
-    const formatCode = (obj: any) => {
-      let jsonString = JSON.stringify(obj, null, 2);
-      // Add more specific formatting if needed
-      return jsonString;
-    };
 
-    const handleGenerateCode = () => {
-        const header = `import { QuizTemplate } from '../types';\nimport { initialQuestions } from './questions';\n\nconst defaultAnalysis = {\n    range0_25: "It seems like there are quite a few differences in your perspectives. This is a great opportunity to start some interesting conversations and learn more about each other's worlds!",\n    range26_50: "You two have some common ground, but also areas where you see things differently. Exploring these differences can be a fun adventure and a way to grow even closer.",\n    range51_75: "You're on the same wavelength most of the time! You have a solid foundation of understanding. The few differences you have can add a little spice to your relationship.",\n    range76_100: "Wow, it's like you can read each other's minds! Your connection is incredibly strong. You share a deep understanding that is truly special.",\n};\n\nexport const officialTemplates: QuizTemplate[] = `;
-        
-        // A simple way to represent the questions array in the output
-        const templatesWithQuestionVars = templates.map(t => {
-            if (t.id === 'official-standard') {
-                return { ...t, questions: 'initialQuestions' };
-            }
-            // Add more complex logic here if other templates use subsets of initialQuestions
-            return t;
-        });
-
-        let code = header + formatCode(templatesWithQuestionVars) + ';\n';
-        // Replace stringified question variables with the actual variable names
-        code = code.replace(/"questions": "initialQuestions"/g, '"questions": initialQuestions');
-        
+    const generateAndShowCode = () => {
+        const code = `import { QuizTemplate } from '../types.ts';\nimport { initialQuestions } from './questions.ts';\n\nconst defaultAnalysis = {\n    range0_25: "It seems like there are quite a few differences in your perspectives. This is a great opportunity to start some interesting conversations and learn more about each other's worlds!",\n    range26_50: "You two have some common ground, but also areas where you see things differently. Exploring these differences can be a fun adventure and a way to grow even closer.",\n    range51_75: "You're on the same wavelength most of the time! You have a solid foundation of understanding. The few differences you have can add a little spice to your relationship.",\n    range76_100: "Wow, it's like you can read each other's minds! Your connection is incredibly strong. You share a deep understanding that is truly special.",\n};\n\nexport const officialTemplates: QuizTemplate[] = ${JSON.stringify(templates, null, 2)};`;
         setGeneratedCode(code);
+        setIsCodeModalOpen(true);
     };
-
-    const TemplateSection: React.FC<{title: string, templates: QuizTemplate[], onEdit: (t: QuizTemplate)=>void, onDelete: (id: string)=>void}> = ({title, templates, onEdit, onDelete}) => (
-         <Card>
-            <h3 className="text-xl font-bold mb-4">{title} ({templates.length})</h3>
-            {templates.length === 0 ? <p className="text-gray-500">No templates here.</p> : (
-                <div className="space-y-4">
-                    {templates.map(template => (
-                        <div key={template.id} className="p-4 border rounded-lg bg-gray-50 space-y-2">
-                            <p><strong>Title:</strong> {template.title}</p>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                <Button onClick={() => onEdit(template)} variant="secondary" className="text-sm py-1 px-2 w-auto">Edit</Button>
-                                <Button onClick={() => onDelete(template.id)} variant="secondary" className="text-sm py-1 px-2 w-auto bg-red-500 hover:bg-red-600 border-red-500 text-white">Delete</Button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </Card>
-    );
+    
+    // Handlers for config saving
+    const handleConfigSave = (setter: Function, config: any, name: string) => {
+        setter(config);
+        alert(`${name} settings saved!`);
+    };
 
     return (
         <div className="space-y-6">
             <Card>
-                <div className="flex justify-between items-center flex-wrap gap-4">
+                <div className="flex justify-between items-center">
                     <h2 className="text-2xl font-bold">Admin Dashboard</h2>
                     <Button onClick={onLogout} variant="secondary" className="w-auto px-4 py-2 text-sm">Logout</Button>
                 </div>
-                <div className="flex space-x-1 sm:space-x-2 border-b mt-4 overflow-x-auto">
-                    <TabButton name="publish" label="Publish Changes" />
-                    <TabButton name="templates" label="Manage Quizzes" />
-                    <TabButton name="adsense" label="AdSense" />
-                    <TabButton name="internal_ads" label="Internal Ads" />
-                    <TabButton name="theme" label="Theme" />
-                    <TabButton name="static_pages" label="Static Pages" />
+                <div className="border-b mt-4">
+                  <div className="flex space-x-1 sm:space-x-2 -mb-px overflow-x-auto">
+                      <TabButton name="templates" label="Manage Quizzes" />
+                      <TabButton name="adsense" label="AdSense" />
+                      <TabButton name="internal_ads" label="Internal Ads" />
+                       <TabButton name="theme" label="Theme" />
+                      <TabButton name="static_pages" label="Static Pages" />
+                  </div>
                 </div>
             </Card>
-            
-            {activeTab === 'publish' && (
-              <Card>
+
+            <Card>
                 <h3 className="text-xl font-bold mb-2">Publish Your Changes</h3>
-                <p className="text-gray-500 mb-4">After you have saved all your changes in the other tabs, click the button below to generate the final code. You will need to copy this code and replace the content of the `data/officialTemplates.ts` file in your GitHub project to make the changes live.</p>
-                <Button onClick={handleGenerateCode}>Save Changes & Generate Code</Button>
-              </Card>
-            )}
-
-            {activeTab === 'templates' && (
-                <div className="space-y-6">
-                    <div className="text-right">
-                        <Button onClick={() => openEditor(null)} className="w-auto">Create New Template</Button>
-                    </div>
-                    <TemplateSection title="All Quiz Templates" templates={templates} onEdit={openEditor} onDelete={handleTemplateDelete} />
-                </div>
-            )}
-
-            {activeTab === 'adsense' && <ConfigSaver settingKey="adsense-config" initialValue={adSenseConfig}><AdSenseConfigUI /></ConfigSaver>}
-            {activeTab === 'internal_ads' && <ConfigSaver settingKey="internal-ad-config" initialValue={internalAdConfig}><InternalAdsConfigUI /></ConfigSaver>}
-            {activeTab === 'theme' && <ConfigSaver settingKey="site-images-config" initialValue={siteImages}><ThemeConfigUI /></ConfigSaver>}
-            {activeTab === 'static_pages' && <ConfigSaver settingKey="static-pages-content" initialValue={staticPages}><StaticPagesUI /></ConfigSaver>}
+                <p className="text-gray-500 mb-4">After saving changes in all tabs, click here to generate the final code to update your website.</p>
+                <Button onClick={generateAndShowCode} className="w-auto">Save Changes & Generate Code</Button>
+            </Card>
+            
+            {activeTab === 'templates' && <TemplatesManager openEditor={openEditor} templates={templates} onDelete={handleTemplateDelete} />}
+            {activeTab === 'adsense' && <ConfigSaver onSave={() => handleConfigSave(setAdSenseConfig, currentAdSenseConfig, 'AdSense')}><AdSenseConfigUI config={currentAdSenseConfig} setConfig={setCurrentAdSenseConfig} /></ConfigSaver>}
+            {activeTab === 'internal_ads' && <ConfigSaver onSave={() => handleConfigSave(setInternalAdConfig, currentInternalAdConfig, 'Internal Ad')}><InternalAdsConfigUI config={currentInternalAdConfig} setConfig={setCurrentInternalAdConfig} /></ConfigSaver>}
+            {activeTab === 'theme' && <ConfigSaver onSave={() => handleConfigSave(setSiteImages, currentSiteImages, 'Theme')}><ThemeConfigUI config={currentSiteImages} setConfig={setCurrentSiteImages} /></ConfigSaver>}
+            {activeTab === 'static_pages' && <ConfigSaver onSave={() => handleConfigSave(setStaticPages, currentStaticPages, 'Static Pages')}><StaticPagesUI config={currentStaticPages} setConfig={setCurrentStaticPages} /></ConfigSaver>}
             
             {isEditorOpen && editingTemplate && (
-                <QuizEditorModal
-                    template={editingTemplate}
-                    setTemplate={setEditingTemplate}
-                    onClose={() => setIsEditorOpen(false)}
-                    onSave={handleSaveTemplate}
-                />
+                <QuizEditorModal template={editingTemplate} setTemplate={setEditingTemplate} onClose={() => setIsEditorOpen(false)} onSave={handleSaveTemplate} />
             )}
-            {generatedCode && <GeneratedCodeModal code={generatedCode} onClose={() => setGeneratedCode(null)} />}
+             {isCodeModalOpen && (
+                <CodeModal code={generatedCode} onClose={() => setIsCodeModalOpen(false)} />
+            )}
         </div>
     );
 
     function TabButton({ name, label }: { name: string, label: string }) {
-        return (
-            <button
-                onClick={() => setActiveTab(name)}
-                className={`px-3 sm:px-4 py-2 -mb-px border-b-2 text-sm sm:text-base whitespace-nowrap ${activeTab === name ? 'border-pink-500 text-pink-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            >
-                {label}
-            </button>
-        );
+        return <button onClick={() => setActiveTab(name)} className={`px-3 sm:px-4 py-2 border-b-2 text-sm sm:text-base whitespace-nowrap ${activeTab === name ? 'border-pink-500 text-pink-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>{label}</button>;
     }
 };
 
-// --- Config Section UIs ---
+// --- Child Components for Admin ---
 
-// FIX: Made config and setConfig props optional and added a guard clause to handle them being injected by the parent.
-const AdSenseConfigUI: React.FC<{config?: AdSenseConfig, setConfig?: (c: AdSenseConfig)=>void}> = ({ config, setConfig }) => {
-    if (!config || !setConfig) return null;
-    return (
-        <div className="space-y-4">
-            <label className="flex items-center">
-                <input type="checkbox" checked={config.enabled} onChange={e => setConfig({...config, enabled: e.target.checked})} className="mr-2 h-4 w-4" />
-                Enable AdSense
-            </label>
-            <div>
-                <label className="block text-sm font-medium">Client ID (ca-pub-xxxx)</label>
-                <input type="text" value={config.clientId} onChange={e => setConfig({...config, clientId: e.target.value})} className="mt-1 w-full p-2 border rounded-md" />
-            </div>
-            <div>
-                <label className="block text-sm font-medium">Ad Slot ID</label>
-                <input type="text" value={config.adSlotId} onChange={e => setConfig({...config, adSlotId: e.target.value})} className="mt-1 w-full p-2 border rounded-md" />
-            </div>
-            <div>
-                <label className="block text-sm font-medium">AdSense Verification Code</label>
-                <input type="text" value={config.verificationCode} onChange={e => setConfig({...config, verificationCode: e.target.value})} className="mt-1 w-full p-2 border rounded-md" />
-            </div>
+const ConfigSaver: React.FC<{onSave: () => void, children: React.ReactElement}> = ({ onSave, children }) => (
+    <Card>
+        {children}
+        <Button onClick={onSave} className="mt-6">Save Settings</Button>
+    </Card>
+);
+
+const TemplatesManager: React.FC<{openEditor: (t: QuizTemplate | null) => void, templates: QuizTemplate[], onDelete: (id: string) => void}> = ({ openEditor, templates, onDelete }) => (
+    <Card>
+        <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold">All Quiz Templates ({templates.length})</h3>
+            <Button onClick={() => openEditor(null)} className="w-auto">Create New Template</Button>
         </div>
-    );
-};
+        <div className="space-y-4">
+            {templates.map(t => (
+                <div key={t.id} className="p-4 border rounded-lg bg-gray-50 flex justify-between items-center">
+                    <div>
+                        <p className="font-bold">{t.title}</p>
+                        <p className="text-sm text-gray-500">{t.questions.length} questions</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <Button onClick={() => openEditor(t)} variant="secondary" className="text-sm py-1 px-2 w-auto">Edit</Button>
+                        <Button onClick={() => onDelete(t.id)} variant="secondary" className="text-sm py-1 px-2 w-auto bg-red-500 hover:bg-red-600 border-red-500 text-white">Delete</Button>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </Card>
+);
 
-// FIX: Made config and setConfig props optional and added a guard clause to handle them being injected by the parent.
-const InternalAdsConfigUI: React.FC<{config?: Record<string, InternalAd>, setConfig?: (c: Record<string, InternalAd>)=>void}> = ({ config, setConfig }) => {
-    if (!config || !setConfig) return null;
-    const handleInternalAdChange = (key: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      const { name, value, type } = e.target;
-      const isChecked = (e.target as HTMLInputElement).checked;
-      setConfig({
-        ...config,
-        [key]: {
-          ...(config[key] || {enabled: false, imageUrl: '', redirectUrl: '', title: '', aspectRatio: '16:9'}),
-          [name]: type === 'checkbox' ? isChecked : value,
-        },
-      });
+const AdSenseConfigUI: React.FC<{config: AdSenseConfig, setConfig: React.Dispatch<React.SetStateAction<AdSenseConfig>>}> = ({ config, setConfig }) => (
+    <div className="space-y-4">
+        <h3 className="text-xl font-bold mb-4">Google AdSense Settings</h3>
+        <CheckboxInput label="Enable AdSense" checked={config.enabled} onChange={v => setConfig({...config, enabled: v})} />
+        <TextInput label="Client ID (e.g., ca-pub-xxx)" value={config.clientId} onChange={v => setConfig({...config, clientId: v})} />
+        <TextInput label="Ad Slot ID" value={config.adSlotId} onChange={v => setConfig({...config, adSlotId: v})} />
+        <TextInput label="Verification Code (content from meta tag)" value={config.verificationCode} onChange={v => setConfig({...config, verificationCode: v})} />
+    </div>
+);
+
+const InternalAdsConfigUI: React.FC<{config: Record<string, InternalAd>, setConfig: React.Dispatch<React.SetStateAction<Record<string, InternalAd>>>}> = ({ config, setConfig }) => {
+    const handleInternalAdChange = (key: string, field: keyof InternalAd, value: any) => {
+        setConfig(prev => ({ ...prev, [key]: { ...(prev[key]!), [field]: value } }));
     };
     return (
         <div className="space-y-6">
-          {Object.entries(config).map(([key, ad]) => (
-            <div key={key} className="p-4 border rounded-lg">
-              <h4 className="font-semibold mb-2">{ad.title}</h4>
-              <div className="space-y-4">
-                <label className="flex items-center">
-                  <input type="checkbox" name="enabled" checked={ad.enabled} onChange={(e) => handleInternalAdChange(key, e)} className="mr-2 h-4 w-4" />
-                  Enable Ad
-                </label>
-                <div>
-                    <label className="block text-sm font-medium">Image URL</label>
-                    <input type="text" name="imageUrl" value={ad.imageUrl} onChange={(e) => handleInternalAdChange(key, e)} className="mt-1 w-full p-2 border rounded-md" />
+            <h3 className="text-xl font-bold mb-4">Internal Ads Settings</h3>
+            {Object.keys(config).map(key => (
+                <div key={key} className="p-4 border rounded-lg">
+                    <h4 className="font-semibold capitalize text-gray-800">{key.replace(/_/g, ' ')}</h4>
+                    <div className="space-y-2 mt-2">
+                        <CheckboxInput label="Enable Ad" checked={config[key].enabled} onChange={v => handleInternalAdChange(key, 'enabled', v)} />
+                        <TextInput label="Image URL" value={config[key].imageUrl} onChange={v => handleInternalAdChange(key, 'imageUrl', v)} />
+                        <TextInput label="Redirect URL" value={config[key].redirectUrl} onChange={v => handleInternalAdChange(key, 'redirectUrl', v)} />
+                    </div>
                 </div>
-                 <div>
-                    <label className="block text-sm font-medium">Redirect URL</label>
-                    <input type="text" name="redirectUrl" value={ad.redirectUrl} onChange={(e) => handleInternalAdChange(key, e)} className="mt-1 w-full p-2 border rounded-md" />
-                </div>
-              </div>
-            </div>
-          ))}
+            ))}
         </div>
     );
 };
 
-// FIX: Made config and setConfig props optional and added a guard clause to handle them being injected by the parent.
-const ThemeConfigUI: React.FC<{config?: SiteImagesConfig, setConfig?: (c: SiteImagesConfig)=>void}> = ({ config, setConfig }) => {
-    if (!config || !setConfig) return null;
-    return (
-    <div className="space-y-4">
-        <div>
-            <label className="block text-sm font-medium">'Create Your Own Quiz' Image URL</label>
-            <input type="text" value={config.createQuiz} onChange={e => setConfig({...config, createQuiz: e.target.value})} className="mt-1 w-full p-2 border rounded-md" />
-        </div>
+const ThemeConfigUI: React.FC<{config: SiteImagesConfig, setConfig: React.Dispatch<React.SetStateAction<SiteImagesConfig>>}> = ({ config, setConfig }) => (
+     <div className="space-y-4">
+        <h3 className="text-xl font-bold mb-4">Home Page Images</h3>
+        <TextInput label="Create Quiz Card Image URL" value={config.createQuiz} onChange={v => setConfig({...config, createQuiz: v})} />
     </div>
-    );
-};
+);
 
-// FIX: Made config and setConfig props optional and added a guard clause to handle them being injected by the parent.
-const StaticPagesUI: React.FC<{config?: Record<string, string>, setConfig?: (c: Record<string, string>)=>void}> = ({ config, setConfig }) => {
-    if (!config || !setConfig) return null;
-    return (
+const StaticPagesUI: React.FC<{config: Record<string, string>, setConfig: React.Dispatch<React.SetStateAction<Record<string, string>>>}> = ({ config, setConfig }) => (
      <div className="space-y-6">
-        {Object.entries(config).map(([key, content]) => (
-        <div key={key}>
-            <label className="block text-sm font-medium capitalize">{key} Page (HTML allowed)</label>
-            <textarea
-            value={content}
-            onChange={(e) => setConfig({...config, [key]: e.target.value})}
-            rows={8}
-            className="mt-1 w-full p-2 border rounded-md font-mono text-sm"
-            />
-        </div>
+        <h3 className="text-xl font-bold mb-4">Static Pages Content</h3>
+        {Object.keys(config).map(key => (
+            <div key={key}>
+                <label className="block text-sm font-medium capitalize font-bold text-gray-700">{key} Page (HTML allowed)</label>
+                <textarea value={config[key]} onChange={e => setConfig({...config, [key]: e.target.value})} rows={8} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 font-mono text-sm"/>
+            </div>
         ))}
     </div>
-    );
-};
+);
 
-
-// FIX: Updated the type of 'children' to be more specific, which resolves the React.cloneElement type error.
-// --- Generic component to wrap config sections with a save button ---
-const ConfigSaver: React.FC<{ settingKey: string; initialValue: any; children: React.ReactElement<{ config?: any; setConfig?: (c: any) => void; }> }> = ({ settingKey, initialValue, children }) => {
-    const [config, setConfig] = useState(initialValue);
-    
-    const saveConfig = () => {
-        localStorage.setItem(settingKey, JSON.stringify(config));
-        alert('Settings saved! Click "Publish Changes" later to generate final code.');
-        // This is a bit of a hack to let App.tsx know things changed. A proper state manager (Redux, Context) would be better.
-        window.dispatchEvent(new Event('storage'));
-    };
-    
-    return (
-        <Card>
-            {React.cloneElement(children, { config, setConfig })}
-            <div className="mt-6">
-                <Button onClick={saveConfig}>Save This Section</Button>
-            </div>
-        </Card>
-    );
-};
-
-
-// --- Modal Components ---
-
-interface QuizEditorModalProps {
-    template: QuizTemplate;
-    setTemplate: React.Dispatch<React.SetStateAction<QuizTemplate | null>>;
-    onClose: () => void;
-    onSave: () => void;
-}
-
-const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ template, setTemplate, onClose, onSave }) => {
-    
+const QuizEditorModal: React.FC<{template: QuizTemplate, setTemplate: React.Dispatch<React.SetStateAction<QuizTemplate | null>>, onClose: () => void, onSave: () => void}> = ({ template, setTemplate, onClose, onSave }) => {
     if (!template) return null;
-    
-    const t = template; // shorthand
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setTemplate(prev => prev ? { ...prev, [name]: value } : null);
-    };
-
-    const handleAnalysisChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setTemplate(prev => prev ? { ...prev, analysisConfig: { ...(prev.analysisConfig), [name]: value }} : null);
-    };
-
-    const handleQuestionChange = (qIndex: number, text: string) => {
-        setTemplate(prev => {
-            if (!prev) return null;
-            const newQuestions = [...prev.questions];
-            newQuestions[qIndex].text = text;
-            return { ...prev, questions: newQuestions };
-        });
-    };
-
-    const handleOptionChange = (qIndex: number, oIndex: number, value: string) => {
-        setTemplate(prev => {
-            if (!prev) return null;
-            const newQuestions = [...prev.questions];
-            newQuestions[qIndex].options[oIndex] = value;
-            return { ...prev, questions: newQuestions };
-        });
-    };
-    
-    const addQuestion = () => {
-        setTemplate(prev => {
-            if (!prev) return null;
-            const newQuestion: Question = {
-                id: Date.now(),
-                category: 'Admin',
-                text: '',
-                options: ['', '', '', ''],
-                active: true
-            };
-            return { ...prev, questions: [...(prev.questions || []), newQuestion] };
-        });
-    };
-
-    const removeQuestion = (qIndex: number) => {
-        setTemplate(prev => {
-            if (!prev) return null;
-            return { ...prev, questions: (prev.questions || []).filter((_, index) => index !== qIndex) };
-        });
-    };
+    const handleQuestionChange = (qIndex: number, text: string) => setTemplate(p => p ? {...p, questions: p.questions.map((q, i) => i === qIndex ? {...q, text} : q)} : null);
+    const handleOptionChange = (qIndex: number, oIndex: number, value: string) => setTemplate(p => {
+        if(!p) return null;
+        const newQuestions = [...p.questions];
+        newQuestions[qIndex].options[oIndex] = value;
+        return {...p, questions: newQuestions};
+    });
+    const addQuestion = () => setTemplate(p => p ? {...p, questions: [...p.questions, {id: Date.now(), category: 'Admin', text: '', options: ['', '', '', ''], active: true}]} : null);
+    const removeQuestion = (qIndex: number) => setTemplate(p => p ? {...p, questions: p.questions.filter((_, i) => i !== qIndex)} : null);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-3xl max-h-[90vh] flex flex-col">
-                <h3 className="text-xl font-bold mb-4 text-left">{t.id.startsWith('custom-') ? 'Create New Quiz Template' : 'Edit Quiz Template'}</h3>
+                <h3 className="text-xl font-bold mb-4 text-left">{template.id.startsWith('new-') ? 'Create New Quiz Template' : 'Edit Quiz Template'}</h3>
                 <div className="flex-grow overflow-y-auto space-y-4 pr-2 text-left">
-                    <input type="text" name="title" value={t.title || ''} onChange={handleInputChange} placeholder="Quiz Title" className="w-full p-2 border rounded"/>
-                    <textarea name="description" value={t.description || ''} onChange={handleInputChange} placeholder="Description" rows={2} className="w-full p-2 border rounded"/>
-                    <input type="text" name="imageUrl" value={t.imageUrl || ''} onChange={handleInputChange} placeholder="Thumbnail Image URL" className="w-full p-2 border rounded"/>
-                    
+                    <TextInput label="Quiz Title" name="title" value={template.title} onChange={e => setTemplate(p => p ? {...p, title: e.target.value} : null)} />
+                    <TextAreaInput label="Description" name="description" value={template.description} onChange={e => setTemplate(p => p ? {...p, description: e.target.value} : null)} />
+                    <TextInput label="Thumbnail Image URL" name="imageUrl" value={template.imageUrl} onChange={e => setTemplate(p => p ? {...p, imageUrl: e.target.value} : null)} />
                     <div className="space-y-4">
                         <h4 className="font-semibold mt-4">Questions</h4>
-                        {(t.questions || []).map((q, qIndex) => (
-                            <div key={q.id || qIndex} className="p-4 border rounded bg-rose-50 relative">
+                        {(template.questions || []).map((q, qIndex) => (
+                            <div key={q.id} className="p-4 border rounded bg-rose-50 relative">
                                 <p className="font-bold mb-2 text-gray-700">Question {qIndex + 1}</p>
                                 <textarea value={q.text} onChange={e => handleQuestionChange(qIndex, e.target.value)} placeholder="Question text" rows={2} className="w-full p-2 border rounded mb-2"/>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {(q.options || ['', '', '', '']).map((opt, oIndex) => (
-                                        <input key={oIndex} type="text" value={opt} placeholder={`Option ${oIndex + 1}`} onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)} className="w-full p-2 border rounded"/>
-                                    ))}
+                                    {q.options.map((opt, oIndex) => <input key={oIndex} type="text" value={opt} placeholder={`Option ${oIndex + 1}`} onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)} className="w-full p-2 border rounded"/>)}
                                 </div>
-                                <button onClick={() => removeQuestion(qIndex)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-full" aria-label="Delete Question">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg>
-                                </button>
+                                <button onClick={() => removeQuestion(qIndex)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
                             </div>
                         ))}
                          <Button onClick={addQuestion} variant="secondary">Add Question</Button>
                     </div>
-
                     <div className="space-y-2">
                         <h4 className="font-semibold mt-4">Result Analysis Text</h4>
-                        <AnalysisTextArea name="range0_25" label="Score 0-25%" value={t.analysisConfig?.range0_25 || ''} onChange={handleAnalysisChange} />
-                        <AnalysisTextArea name="range26_50" label="Score 26-50%" value={t.analysisConfig?.range26_50 || ''} onChange={handleAnalysisChange} />
-                        <AnalysisTextArea name="range51_75" label="Score 51-75%" value={t.analysisConfig?.range51_75 || ''} onChange={handleAnalysisChange} />
-                        <AnalysisTextArea name="range76_100" label="Score 76-100%" value={t.analysisConfig?.range76_100 || ''} onChange={handleAnalysisChange} />
+                        <TextAreaInput label="Score 0-25%" name="range0_25" value={(template.analysisConfig || {}).range0_25} onChange={e => setTemplate(p => p ? {...p, analysisConfig: {...(p.analysisConfig), range0_25: e.target.value}} : null)} />
+                        <TextAreaInput label="Score 26-50%" name="range26_50" value={(template.analysisConfig || {}).range26_50} onChange={e => setTemplate(p => p ? {...p, analysisConfig: {...(p.analysisConfig), range26_50: e.target.value}} : null)} />
+                        <TextAreaInput label="Score 51-75%" name="range51_75" value={(template.analysisConfig || {}).range51_75} onChange={e => setTemplate(p => p ? {...p, analysisConfig: {...(p.analysisConfig), range51_75: e.target.value}} : null)} />
+                        <TextAreaInput label="Score 76-100%" name="range76_100" value={(template.analysisConfig || {}).range76_100} onChange={e => setTemplate(p => p ? {...p, analysisConfig: {...(p.analysisConfig), range76_100: e.target.value}} : null)} />
                     </div>
                 </div>
                 <div className="mt-6 flex gap-2">
@@ -414,41 +263,45 @@ const QuizEditorModal: React.FC<QuizEditorModalProps> = ({ template, setTemplate
     );
 };
 
-const GeneratedCodeModal: React.FC<{code: string, onClose: ()=>void}> = ({ code, onClose }) => {
-  const [copied, setCopied] = useState(false);
-  
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <h3 className="text-xl font-bold mb-2 text-left">Generated Code for `officialTemplates.ts`</h3>
-            <div className="text-left text-sm text-gray-500 mb-4">
-                <p><strong>Step 1:</strong> Click 'Copy Code'.</p>
-                <p><strong>Step 2:</strong> Go to your GitHub project and open the `data/officialTemplates.ts` file.</p>
-                <p><strong>Step 3:</strong> Delete all the old code in that file and paste this new code.</p>
-                <p><strong>Step 4:</strong> Save the file and redeploy your site to make the changes live.</p>
-            </div>
-            <textarea readOnly value={code} className="w-full flex-grow border rounded bg-gray-50 font-mono text-xs p-2"/>
-            <div className="mt-6 flex gap-2">
-                <Button onClick={onClose} variant="secondary">Close</Button>
-                <Button onClick={handleCopy}>{copied ? 'Copied!' : 'Copy Code'}</Button>
-            </div>
-        </Card>
-    </div>
-  );
+const CodeModal: React.FC<{code: string, onClose: () => void}> = ({ code, onClose }) => {
+    const [copied, setCopied] = useState(false);
+    const handleCopy = () => {
+        navigator.clipboard.writeText(code);
+        setCopied(true);
+    };
+    return (
+         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-3xl max-h-[90vh] flex flex-col">
+                 <h3 className="text-xl font-bold mb-2">Generated Code for `officialTemplates.ts`</h3>
+                 <p className="text-sm text-gray-500 mb-4">Copy this code and replace the entire content of the `data/officialTemplates.ts` file in your project, then redeploy.</p>
+                <textarea readOnly value={code} className="w-full flex-grow p-2 border rounded font-mono text-xs bg-gray-50 resize-none"/>
+                <div className="mt-6 flex gap-2">
+                    <Button onClick={onClose} variant="secondary">Close</Button>
+                    <Button onClick={handleCopy}>{copied ? 'Copied!' : 'Copy Code'}</Button>
+                </div>
+            </Card>
+        </div>
+    );
 };
 
-const AnalysisTextArea: React.FC<{name: string, label: string, value: string, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void}> = ({ name, label, value, onChange }) => (
+// --- Form Input Components ---
+const TextInput: React.FC<{label: string, value: string, onChange: any, name?: string}> = ({label, value, onChange, name}) => (
     <div>
         <label className="block text-sm font-medium text-gray-700">{label}</label>
-        <textarea name={name} value={value} onChange={onChange} rows={3} className="w-full p-2 border rounded mt-1 text-left"/>
+        <input type="text" name={name} value={value} onChange={onChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500"/>
     </div>
 );
-
+const TextAreaInput: React.FC<{label: string, value: string, onChange: any, name?: string}> = ({label, value, onChange, name}) => (
+    <div>
+        <label className="block text-sm font-medium text-gray-700">{label}</label>
+        <textarea name={name} value={value} onChange={onChange} rows={3} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500"/>
+    </div>
+);
+const CheckboxInput: React.FC<{label: string, checked: boolean, onChange: (val: boolean) => void}> = ({label, checked, onChange}) => (
+    <label className="flex items-center">
+        <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="mr-2 h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500"/>
+        {label}
+    </label>
+);
 
 export default AdminDashboardView;

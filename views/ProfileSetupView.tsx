@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Profile, QuizTemplate } from '../types';
-import Card from '../components/Card';
-import Button from '../components/Button';
-import BackButton from '../components/BackButton';
+import { Profile, QuizTemplate } from '../types.ts';
+import Button from '../components/Button.tsx';
+import Card from '../components/Card.tsx';
+import BackButton from '../components/BackButton.tsx';
 
 interface ProfileSetupViewProps {
   userType: 'Creator' | 'Partner';
@@ -12,89 +12,90 @@ interface ProfileSetupViewProps {
 }
 
 const ProfileSetupView: React.FC<ProfileSetupViewProps> = ({ userType, onSave, onBack, activeTemplate }) => {
-  const [profile, setProfile] = useState<Profile>({
-    name: '',
-    age: 25,
-    gender: 'Female',
-    relationshipType: 'Dating',
-    goodThingAboutPartner: '',
-    partnerImprovement: '',
+  const [profile, setProfile] = useState<Omit<Profile, 'relationshipType'>>({
+      name: '',
+      age: 0,
+      gender: '',
+      goodThingAboutPartner: '',
+      partnerImprovement: '',
   });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setProfile(prev => ({ ...prev, [name]: name === 'age' ? parseInt(value, 10) : value }));
-  };
+  const [relationshipType, setRelationshipType] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (profile.name.trim() === '') {
-        alert('Please enter your name.');
-        return;
+    if (profile.name.trim() === '' || !relationshipType) {
+      setError('Please fill out your name and relationship type.');
+      return;
     }
-    onSave(profile);
+    onSave({ ...profile, relationshipType });
   };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      const { name, value } = e.target;
+      setProfile(prev => ({ ...prev, [name]: name === 'age' ? parseInt(value) || 0 : value }));
+      setError('');
+  }
 
   return (
-    <Card className="relative pt-12">
+    <Card className="relative">
       <BackButton onClick={onBack} />
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-pink-600">{activeTemplate?.title}</h2>
-        <p className="text-gray-500 mt-2">
-            {userType === 'Creator' 
-                ? "First, let's create your profile." 
-                : 'Great! Now, tell us about yourself and the creator.'}
-        </p>
+          <div className="mb-4">
+              <p className="text-sm font-semibold text-pink-600">PLAYING QUIZ</p>
+              <h2 className="text-2xl font-bold">{activeTemplate?.title || 'Your Quiz'}</h2>
+          </div>
+          <h3 className="text-xl font-bold text-gray-800">First, what's your name?</h3>
+          <p className="text-gray-500 mt-1">{userType === 'Creator' ? "Let's start by creating your profile." : "Great! Now, tell us about yourself and the creator."}</p>
       </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">Your Name</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={profile.name}
-            onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500"
-            required
-          />
+      
+      <form onSubmit={handleSubmit} className="space-y-4 text-left">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">Your Name</label>
+                <input type="text" name="name" value={profile.name} onChange={handleInputChange} className="mt-1 w-full p-2 border rounded-md" required/>
+            </div>
+            <div>
+                <label htmlFor="age" className="block text-sm font-medium text-gray-700">Your Age</label>
+                <input type="number" name="age" value={profile.age || ''} onChange={handleInputChange} className="mt-1 w-full p-2 border rounded-md" required/>
+            </div>
+             <div>
+                <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Your Gender</label>
+                <select name="gender" value={profile.gender} onChange={handleInputChange} className="mt-1 w-full p-2 border rounded-md" required>
+                    <option value="" disabled>Select...</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+             <div>
+                <label htmlFor="relationshipType" className="block text-sm font-medium text-gray-700">Relationship Type</label>
+                <select name="relationshipType" value={relationshipType} onChange={(e) => setRelationshipType(e.target.value)} className="mt-1 w-full p-2 border rounded-md" required>
+                    <option value="" disabled>Select...</option>
+                    <option value="Girlfriend/Boyfriend">Girlfriend/Boyfriend</option>
+                    <option value="Husband/Wife">Husband/Wife</option>
+                    <option value="Friends">Friends</option>
+                    <option value="Siblings">Siblings</option>
+                    <option value="Crush">Crush</option>
+                    <option value="Colleagues">Colleagues</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
         </div>
-        <div>
-            <label htmlFor="age" className="block text-sm font-medium text-gray-700">Your Age</label>
-            <input type="number" id="age" name="age" value={profile.age} onChange={handleChange} className="mt-1 w-full p-2 border rounded-md" required/>
-        </div>
-        <div>
-            <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Your Gender</label>
-            <select id="gender" name="gender" value={profile.gender} onChange={handleChange} className="mt-1 w-full p-2 border rounded-md" required>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        <div>
-            <label htmlFor="relationshipType" className="block text-sm font-medium text-gray-700">Relationship Type</label>
-            <select id="relationshipType" name="relationshipType" value={profile.relationshipType} onChange={handleChange} className="mt-1 w-full p-2 border rounded-md" required>
-                <option value="Dating">Dating</option>
-                <option value="Married">Married</option>
-                <option value="Friends">Friends</option>
-                <option value="Siblings">Siblings</option>
-                <option value="Crush">Crush</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
+        
         <div>
             <label htmlFor="goodThingAboutPartner" className="block text-sm font-medium text-gray-700">A wonderful quality I see in my partner:</label>
-            <textarea id="goodThingAboutPartner" name="goodThingAboutPartner" rows={3} value={profile.goodThingAboutPartner} onChange={handleChange} className="mt-1 w-full p-2 border rounded-md" required />
+            <textarea name="goodThingAboutPartner" rows={3} value={profile.goodThingAboutPartner} onChange={handleInputChange} className="mt-1 w-full p-2 border rounded-md" required />
         </div>
         <div>
             <label htmlFor="partnerImprovement" className="block text-sm font-medium text-gray-700">A small suggestion for our growth together:</label>
-            <textarea id="partnerImprovement" name="partnerImprovement" rows={3} value={profile.partnerImprovement} onChange={handleChange} className="mt-1 w-full p-2 border rounded-md" required />
+            <textarea name="partnerImprovement" rows={3} value={profile.partnerImprovement} onChange={handleInputChange} className="mt-1 w-full p-2 border rounded-md" required />
         </div>
         
-        <Button type="submit">
-          Save and Start Quiz
-        </Button>
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        <div className="pt-2">
+            <Button type="submit">Start Answering</Button>
+        </div>
       </form>
     </Card>
   );

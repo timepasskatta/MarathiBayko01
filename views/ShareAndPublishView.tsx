@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { SessionData, InternalAd } from '../types';
-import { encodeObjectToBase64 } from '../utils/helpers';
-import Card from '../components/Card';
-import Button from '../components/Button';
-import BackButton from '../components/BackButton';
-import InternalAdBanner from '../components/InternalAdBanner';
+import { SessionData, InternalAd } from '../types.ts';
+import { encodeObjectToBase64 } from '../utils/helpers.ts';
+import Button from '../components/Button.tsx';
+import Card from '../components/Card.tsx';
+import BackButton from '../components/BackButton.tsx';
+import InternalAdBanner from '../components/InternalAdBanner.tsx';
 
 interface ShareAndPublishViewProps {
   sessionData: SessionData;
@@ -13,40 +13,38 @@ interface ShareAndPublishViewProps {
 }
 
 const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ sessionData, onBack, internalAd }) => {
-  const [shareLink, setShareLink] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCopied, setIsCopied] = useState(false);
+  const [invitationLink, setInvitationLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState<boolean>(false);
 
   useEffect(() => {
-    const generateLink = async () => {
-      try {
-        const encodedData = await encodeObjectToBase64(sessionData);
-        const link = `${window.location.origin}${window.location.pathname}#/session/${encodedData}`;
-        setShareLink(link);
-      } catch (error) {
-        console.error("Failed to generate share link:", error);
-        setShareLink("Error generating link. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    generateLink();
+      const generateLink = async () => {
+        try {
+          const encodedData = await encodeObjectToBase64(sessionData);
+          const link = `${window.location.origin}${window.location.pathname}#/session/${encodedData}`;
+          setInvitationLink(link);
+        } catch (error) {
+            console.error("Error encoding session data:", error);
+            setInvitationLink("Error: Could not generate link.");
+        }
+      };
+      generateLink();
   }, [sessionData]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(shareLink).then(() => {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    });
+    if (invitationLink) {
+      navigator.clipboard.writeText(invitationLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <Card className="relative pt-12 text-center">
+      <Card className="text-center relative pt-12">
         <BackButton onClick={onBack} />
         <h2 className="text-2xl font-bold mb-4">✅ Your Quiz is Ready!</h2>
         <p className="text-gray-600 mb-6">
-          Now, copy the special link below and send it to your partner. They'll use it to start the quiz.
+          Copy this Magic Link and share it with your partner. That's it!
         </p>
 
         <div className="bg-rose-50 border-2 border-dashed border-rose-200 rounded-lg p-4 mb-6">
@@ -54,16 +52,15 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ sessionData, 
           <textarea
             readOnly
             className="w-full h-32 sm:h-24 p-2 font-mono text-xs text-gray-600 bg-transparent border-none focus:ring-0 resize-none text-center"
-            value={isLoading ? 'Generating your link...' : shareLink}
+            value={invitationLink || 'Generating...'}
           />
         </div>
         
-        <Button onClick={handleCopy} disabled={isLoading || !shareLink}>
-          {isCopied ? 'Copied to Clipboard!' : 'Copy Magic Link'}
+        <Button onClick={handleCopy} disabled={!invitationLink || invitationLink.startsWith('Error')}>
+          {copied ? 'Copied to Clipboard!' : 'Copy Magic Link'}
         </Button>
-         <p className="text-xs text-gray-400 mt-4">
-            Pro Tip: After your partner completes the quiz, ask them to send you a screenshot of the results page!
-        </p>
+        <p className="text-xs text-gray-400 mt-4">Pro Tip: After your partner completes the quiz, ask them to send you a screenshot of the results page!</p>
+
       </Card>
       
       <InternalAdBanner ad={internalAd} />

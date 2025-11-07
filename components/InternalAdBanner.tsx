@@ -1,6 +1,6 @@
 import React from 'react';
-import { InternalAd } from '../types';
-import Card from './Card';
+import { InternalAd } from '../types.ts';
+import Card from './Card.tsx';
 
 interface InternalAdBannerProps {
   ad?: InternalAd;

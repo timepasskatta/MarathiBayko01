@@ -1,21 +1,18 @@
 import React from 'react';
-import { QuizTemplate, SiteImagesConfig } from '../types';
-import Card from '../components/Card';
-import Button from '../components/Button';
-import { officialTemplates } from '../data/officialTemplates';
+import { QuizTemplate, SiteImagesConfig } from '../types.ts';
+import { officialTemplates } from '../data/officialTemplates.ts';
+import Button from '../components/Button.tsx';
+import Card from '../components/Card.tsx';
 
 interface HomeViewProps {
-  onStartCreator: (template: QuizTemplate) => void;
+  onStartCreator: (template?: QuizTemplate) => void;
   siteImages: SiteImagesConfig;
 }
 
 const HomeView: React.FC<HomeViewProps> = ({ onStartCreator, siteImages }) => {
 
-  const TemplateCard: React.FC<{ template: QuizTemplate, isPrimary?: boolean }> = ({ template, isPrimary = false }) => (
-    <Card 
-      onClick={() => onStartCreator(template)}
-      className="group hover:shadow-xl transition-shadow flex flex-col p-0 overflow-hidden cursor-pointer"
-    >
+  const TemplateCard: React.FC<{ template: QuizTemplate, isAction?: boolean }> = ({ template, isAction = false }) => (
+    <Card className="group hover:shadow-xl transition-shadow flex flex-col p-0 overflow-hidden">
       {template.imageUrl && (
         <div className="overflow-hidden">
           <img 
@@ -26,47 +23,45 @@ const HomeView: React.FC<HomeViewProps> = ({ onStartCreator, siteImages }) => {
           />
         </div>
       )}
-      <div className="p-4 flex flex-col flex-grow text-center">
-        <h4 className={`font-bold text-lg ${isPrimary ? 'text-pink-600' : 'text-gray-800'}`}>{template.title}</h4>
-        {isPrimary && <p className="text-gray-500 text-sm mb-2">{template.creatorName}</p>}
-        <p className="text-sm text-gray-600 flex-grow mb-4">{template.description}</p>
+      <div className="p-4 flex flex-col flex-grow">
+        <h4 className={`font-bold text-lg ${template.isOfficial ? 'text-pink-700' : 'text-gray-800'}`}>{template.title}</h4>
+        { !isAction && <p className="text-sm text-gray-500 mb-2">by {template.creatorName}</p> }
+        <p className="text-gray-600 flex-grow">{template.description}</p>
         <Button 
-          variant={isPrimary ? 'primary' : 'secondary'}
-          className="w-full mt-auto"
+            onClick={() => onStartCreator(isAction ? undefined : template)} 
+            className="w-full mt-4" 
+            variant={isAction ? 'primary' : 'secondary'}
         >
-          {isPrimary ? 'Start Creating' : 'Start Quiz'}
+          {isAction ? "Start Creating" : "Start Quiz"}
         </Button>
       </div>
     </Card>
   );
 
-  const createYourOwnTemplate = {
-      id: 'custom-quiz',
-      title: 'Create Your Own Quiz',
-      description: 'Design a personalized quiz with your own questions for a truly unique compatibility test.',
-      creatorName: 'You',
-      questions: [],
-      isPublic: false,
-      isOfficial: true,
-      createdAt: new Date().toISOString(),
-      status: 'approved',
-      imageUrl: siteImages.createQuiz,
-      analysisConfig: officialTemplates.find(t=>t.id === 'official-standard')?.analysisConfig || { range0_25:'', range26_50:'', range51_75:'', range76_100:'' }
-  } as QuizTemplate
-
   return (
     <div className="space-y-8">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-800">Choose a Quiz</h2>
-        <p className="text-gray-500 mt-2">Select a pre-made quiz to explore your relationship, or create your own for a personal touch.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <TemplateCard template={createYourOwnTemplate} isPrimary={true}/>
-        {officialTemplates.map(template => (
-          <TemplateCard key={template.id} template={template} />
-        ))}
-      </div>
+        <Card className="text-center">
+            <h2 className="text-3xl font-bold text-gray-800">Choose a Quiz</h2>
+            <p className="text-gray-500 mt-2">Select a pre-made quiz to explore your relationship, or create your own for a personal touch.</p>
+        </Card>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+            <TemplateCard template={{
+                id: 'custom-creator',
+                title: 'Create Your Own Quiz',
+                description: 'Design a personalized quiz with your own questions for a truly unique compatibility test.',
+                imageUrl: siteImages.createQuiz,
+                isOfficial: true,
+                questions: [],
+                creatorName: '',
+                isPublic: false,
+                createdAt: '',
+                status: 'approved',
+                analysisConfig: officialTemplates[0].analysisConfig,
+            }} isAction={true} />
+            
+            {officialTemplates.map(template => <TemplateCard key={template.id} template={template} />)}
+        </div>
     </div>
   );
 };

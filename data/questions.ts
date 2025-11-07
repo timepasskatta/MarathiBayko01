@@ -1,4 +1,4 @@
-import { Question } from '../types';
+import { Question } from '../types.ts';
 
 export const initialQuestions: Question[] = [
   // Personality & Nature

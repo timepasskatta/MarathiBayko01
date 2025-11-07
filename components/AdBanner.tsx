@@ -7,8 +7,7 @@ interface AdBannerProps {
 
 const AdBanner: React.FC<AdBannerProps> = ({ clientId, adSlotId }) => {
     useEffect(() => {
-        // Only push to adsbygoogle if the IDs are valid to avoid errors.
-        if (clientId && !clientId.includes('YOUR_CLIENT_ID') && adSlotId && !adSlotId.includes('YOUR_AD_SLOT_ID')) {
+        if (clientId && adSlotId) {
             try {
                 ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
             } catch (e) {
@@ -17,8 +16,7 @@ const AdBanner: React.FC<AdBannerProps> = ({ clientId, adSlotId }) => {
         }
     }, [clientId, adSlotId]);
 
-    // Show a placeholder if the AdSense IDs are not configured
-    if (!clientId || clientId.includes('YOUR_CLIENT_ID') || !adSlotId || adSlotId.includes('YOUR_AD_SLOT_ID')) {
+    if (!clientId || !adSlotId) {
         return (
             <div className="my-4 p-4 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg text-center">
                 <p><strong>Ad Banner Placeholder</strong></p>

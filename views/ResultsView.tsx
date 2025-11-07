@@ -1,30 +1,27 @@
 import React, { useMemo } from 'react';
-import { ResultData, AdSenseConfig, InternalAd } from '../types';
-import Card from '../components/Card';
-import Button from '../components/Button';
-import CircularProgressBar from '../components/CircularProgressBar';
-import Confetti from '../components/Confetti';
-import AdBanner from '../components/AdBanner';
-import InternalAdBanner from '../components/InternalAdBanner';
+import { ResultData, AdSenseConfig, InternalAd } from '../types.ts';
+import Button from '../components/Button.tsx';
+import Card from '../components/Card.tsx';
+import CircularProgressBar from '../components/CircularProgressBar.tsx';
+import Confetti from '../components/Confetti.tsx';
+import AdBanner from '../components/AdBanner.tsx';
+import InternalAdBanner from '../components/InternalAdBanner.tsx';
 
 interface ResultsViewProps {
   resultData: ResultData;
   onBackToHome: () => void;
-  internalAdConfig: Record<string, InternalAd>;
   adSenseConfig: AdSenseConfig;
+  internalAd?: InternalAd;
 }
 
-const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, internalAdConfig, adSenseConfig }) => {
-
+const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, adSenseConfig, internalAd }) => {
   const {
     creatorProfile,
     partnerProfile,
     creatorAnswers,
     partnerAnswers,
     questionsUsed,
-    quizTitle,
     analysisConfig,
-    isSecondAttempt
   } = resultData;
 
   const { score, matches, total, analysisText } = useMemo(() => {
@@ -38,7 +35,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
     });
 
     const totalQuestions = activeQuestions.length;
-    const compatibilityScore = totalQuestions > 0 ? (matchCount / totalQuestions) * 100 : 0;
+    const compatibilityScore = totalQuestions > 0 ? Math.round((matchCount / totalQuestions) * 100) : 0;
     
     let text = "Here's how you matched!";
     if (analysisConfig) {
@@ -61,33 +58,31 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, int
   return (
     <div className="space-y-6">
       {showConfetti && <Confetti />}
-      
-      {isSecondAttempt && (
-          <Card className="bg-yellow-100 border-yellow-300 text-yellow-800 text-center">
-              <p className="font-bold flex items-center justify-center gap-2">
-                <span className="text-xl">⚠️</span>
-                <span>Warning: Second Attempt</span>
-              </p>
-              <p className="text-sm mt-1">This result has been viewed before. This might be a second attempt after seeing the answers.</p>
-          </Card>
-      )}
+
+        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 text-center">
+            <p className="font-semibold text-gray-700">🎉 Here are your results! Take a screenshot of this page and send it to <span className="font-bold text-pink-600">{creatorProfile.name}</span> to share the fun!</p>
+        </div>
 
       <Card className="text-center">
-        <h2 className="text-2xl md:text-3xl font-bold mb-2">{quizTitle} Results</h2>
+        <h2 className="text-2xl md:text-3xl font-bold mb-2">Compatibility Result</h2>
         <p className="text-lg text-gray-600 mb-6">{creatorProfile.name} & {partnerProfile.name}</p>
         
-        <div className="my-6">
-            <CircularProgressBar progress={score} />
-        </div>
+        <CircularProgressBar progress={score} />
         
         <p className="text-lg font-semibold mt-4">You matched on {matches} out of {total} questions.</p>
         
-        <AdBanner clientId={adSenseConfig.clientId} adSlotId={adSenseConfig.adSlotId} />
-
+        {resultData.isSecondAttempt && (
+            <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg text-sm flex items-center justify-center gap-2">
+                <span className="font-bold text-lg">⚠️</span>
+                <span><strong>Warning:</strong> This result has been viewed before. This might be a second attempt after seeing the answers.</span>
+            </div>
+        )}
+        
         <p className="text-gray-600 mt-4 max-w-lg mx-auto italic">"{analysisText}"</p>
       </Card>
       
-      <InternalAdBanner ad={internalAdConfig['results_middle_1x1']} />
+      {adSenseConfig.enabled && <AdBanner clientId={adSenseConfig.clientId} adSlotId={adSenseConfig.adSlotId} />}
+      <InternalAdBanner ad={internalAd} />
 
       <Card>
         <h3 className="text-xl font-bold text-center mb-6">Your Thoughts About Each Other</h3>
