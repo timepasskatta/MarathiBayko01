@@ -69,6 +69,17 @@ const ShareAndPublishView: React.FC<ShareAndPublishViewProps> = ({ sessionData, 
         <Button onClick={handleCopy} disabled={!invitationLink || invitationLink.startsWith('Error')}>
           {copied ? 'Copied to Clipboard!' : 'Copy Magic Link'}
         </Button>
+        
+        <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg text-sm text-left">
+            <p className="font-bold text-center">⚠️ Important Note / महत्वाची सूचना</p>
+            <p className="mt-2">
+                <strong>English:</strong> This link can be very long. For best results, please share it using <strong>Email (Gmail)</strong> or <strong>Telegram</strong>. Sharing via WhatsApp may corrupt the link and cause it to not work.
+            </p>
+            <p className="mt-2">
+                <strong>Marathi:</strong> ही लिंक खूप लांब असू शकते. कृपया ती <strong>Gmail</strong> किंवा <strong>Telegram</strong> वापरून शेअर करा. WhatsApp द्वारे शेअर केल्यास लिंक तुटू शकते आणि काम करणार नाही.
+            </p>
+        </div>
+        
         <p className="text-xs text-gray-400 mt-4">Pro Tip: After your partner completes the quiz, ask them to send you a screenshot of the results page!</p>
 
       </Card>
