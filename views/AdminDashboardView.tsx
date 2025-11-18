@@ -82,8 +82,17 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         setStaticPages(currentStaticPages);
         setSiteImages(currentSiteImages);
         alert('All settings (AdSense, Internal Ads, Theme, Static Pages) have been saved.');
+
+        const jsonString = JSON.stringify(templates, null, 2);
         
-        const code = `import { QuizTemplate } from '../types.ts';\nimport { initialQuestions } from './questions.ts';\n\nconst defaultAnalysis = {\n    range0_25: "It seems like there are quite a few differences in your perspectives. This is a great opportunity to start some interesting conversations and learn more about each other's worlds!",\n    range26_50: "You two have some common ground, but also areas where you see things differently. Exploring these differences can be a fun adventure and a way to grow even closer.",\n    range51_75: "You're on the same wavelength most of the time! You have a solid foundation of understanding. The few differences you have can add a little spice to your relationship.",\n    range76_100: "Wow, it's like you can read each other's minds! Your connection is incredibly strong. You share a deep understanding that is truly special.",\n};\n\nexport const officialTemplates: QuizTemplate[] = ${JSON.stringify(templates, null, 2)};`;
+        // Use string concatenation instead of template literals for the outer code structure.
+        // This prevents backticks in the JSON string (user content) from breaking the JS syntax.
+        const code = "import { QuizTemplate } from '../types.ts';\n" +
+"// NOTE: This file is auto-generated from the Admin Panel. \n" +
+"// Manual edits will be overwritten if you generate code again.\n\n" +
+"// This file contains the full quiz data as a JavaScript object.\n" +
+"export const officialTemplates: QuizTemplate[] = " + jsonString + ";\n";
+
         setGeneratedCode(code);
         setIsCodeModalOpen(true);
     };
@@ -212,8 +221,12 @@ const QuizEditorModal: React.FC<{template: QuizTemplate, setTemplate: React.Disp
     const handleQuestionChange = (qIndex: number, text: string) => setTemplate(p => p ? {...p, questions: p.questions.map((q, i) => i === qIndex ? {...q, text} : q)} : null);
     const handleOptionChange = (qIndex: number, oIndex: number, value: string) => setTemplate(p => {
         if(!p) return null;
-        const newQuestions = [...p.questions];
-        newQuestions[qIndex].options[oIndex] = value;
+        const newQuestions = p.questions.map((q, i) => {
+            if (i !== qIndex) return q;
+            const newOptions = [...q.options];
+            newOptions[oIndex] = value;
+            return { ...q, options: newOptions };
+        });
         return {...p, questions: newQuestions};
     });
     const addQuestion = () => setTemplate(p => p ? {...p, questions: [...p.questions, {id: Date.now(), category: 'Admin', text: '', options: ['', '', '', ''], active: true}]} : null);
@@ -240,7 +253,10 @@ const QuizEditorModal: React.FC<{template: QuizTemplate, setTemplate: React.Disp
                     </div>
                     <TextInput label="Thumbnail Image URL" name="imageUrl" value={template.imageUrl} onChange={e => setTemplate(p => p ? {...p, imageUrl: e.target.value} : null)} />
                     <div className="space-y-4">
-                        <h4 className="font-semibold mt-4">Questions</h4>
+                        <div className="flex justify-between items-center mt-4">
+                            <h4 className="font-semibold">Questions</h4>
+                            <Button onClick={addQuestion} variant="secondary" className="w-auto py-1 px-3 text-sm">Add Question</Button>
+                        </div>
                         {(template.questions || []).map((q, qIndex) => (
                             <div key={q.id} className="p-4 border rounded bg-rose-50 relative">
                                 <p className="font-bold mb-2 text-gray-700">Question {qIndex + 1}</p>
@@ -248,7 +264,7 @@ const QuizEditorModal: React.FC<{template: QuizTemplate, setTemplate: React.Disp
                                 <div className="grid grid-cols-2 gap-2">
                                     {q.options.map((opt, oIndex) => <input key={oIndex} type="text" value={opt} placeholder={`Option ${oIndex + 1}`} onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)} className="w-full p-2 border rounded"/>)}
                                 </div>
-                                <button onClick={() => removeQuestion(qIndex)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
+                                <button onClick={() => removeQuestion(qIndex)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="http://www.w3.org/2000/svg" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
                             </div>
                         ))}
                          <Button onClick={addQuestion} variant="secondary">Add Question</Button>

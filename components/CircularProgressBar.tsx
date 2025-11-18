@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 interface CircularProgressBarProps {
   progress: number;
@@ -15,6 +15,12 @@ const CircularProgressBar: React.FC<CircularProgressBarProps> = ({
   const radius = center - strokeWidth / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (progress / 100) * circumference;
+
+  const colorClass = useMemo(() => {
+    if (progress <= 40) return 'text-red-500';
+    if (progress <= 70) return 'text-amber-500';
+    return 'text-pink-500';
+  }, [progress]);
 
   return (
     <div
@@ -40,7 +46,7 @@ const CircularProgressBar: React.FC<CircularProgressBarProps> = ({
           cy={center}
           r={radius}
           strokeWidth={strokeWidth}
-          className="text-pink-500"
+          className={colorClass}
           stroke="currentColor"
           fill="transparent"
           strokeDasharray={circumference}
@@ -49,7 +55,7 @@ const CircularProgressBar: React.FC<CircularProgressBarProps> = ({
           style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
         />
       </svg>
-      <span className="absolute text-3xl font-bold text-pink-600" aria-hidden="true">{`${Math.round(progress)}%`}</span>
+      <span className={`absolute text-3xl font-bold ${colorClass}`} aria-hidden="true">{`${Math.round(progress)}%`}</span>
     </div>
   );
 };

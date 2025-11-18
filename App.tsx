@@ -68,57 +68,63 @@ const App: React.FC = () => {
 
   // --- App Initialization & Routing ---
   useEffect(() => {
-    const handleHashChange = async () => {
-        const hash = window.location.hash;
-        if (hash.startsWith('#/session/')) {
-            const data = hash.substring('#/session/'.length);
-            try {
-                const decodedPayload = await decodeBase64ToObject<any>(data);
+    const handleSessionRoute = async (data: string) => {
+        try {
+            const decodedPayload = await decodeBase64ToObject<any>(data);
 
-                // Reconstruct the full session data
-                let session: SessionData;
+            // Reconstruct the full session data
+            let session: SessionData;
 
-                if (decodedPayload.templateId) {
-                    // Smart link: find template and add questions
-                    const template = officialTemplates.find(t => t.id === decodedPayload.templateId);
-                    if (!template) {
-                        throw new Error(`Official quiz template '${decodedPayload.templateId}' not found.`);
-                    }
-                    session = {
-                        ...decodedPayload,
-                        questionsUsed: template.questions,
-                    };
-                } else {
-                    // Legacy/Custom link: questions are already included
-                    session = decodedPayload as SessionData;
+            if (decodedPayload.templateId) {
+                // Smart link: find template and add questions
+                const template = officialTemplates.find(t => t.id === decodedPayload.templateId);
+                if (!template) {
+                    throw new Error(`Official quiz template '${decodedPayload.templateId}' not found.`);
                 }
+                session = {
+                    ...decodedPayload,
+                    questionsUsed: template.questions,
+                };
+            } else {
+                // Legacy/Custom link: questions are already included
+                session = decodedPayload as SessionData;
+            }
 
-                if (validateSessionData(session)) {
-                    setAppState({ view: 'partner_profile_setup', sessionData: session });
-                } else {
-                    alert('Invalid or corrupted quiz link.');
-                    goToHome();
-                }
-            } catch (e) {
-                console.error("Error decoding session link:", e);
+            if (validateSessionData(session)) {
+                setAppState({ view: 'partner_profile_setup', sessionData: session });
+            } else {
                 alert('Invalid or corrupted quiz link.');
                 goToHome();
             }
-        } else if (hash.startsWith('#/result/')) {
-            const data = hash.substring('#/result/'.length);
-            try {
-                const result = await decodeBase64ToObject<ResultData>(data);
-                if (validateResultData(result)) {
-                     setAppState({ view: 'results', resultData: result });
-                } else {
-                    alert('Invalid or corrupted result link.');
-                    goToHome();
-                }
-            } catch (e) {
-                console.error("Error decoding result link:", e);
+        } catch (e) {
+            console.error("Error decoding session link:", e);
+            alert('Invalid or corrupted quiz link.');
+            goToHome();
+        }
+    };
+
+    const handleResultRoute = async (data: string) => {
+        try {
+            const result = await decodeBase64ToObject<ResultData>(data);
+            if (validateResultData(result)) {
+                 setAppState({ view: 'results', resultData: result });
+            } else {
                 alert('Invalid or corrupted result link.');
                 goToHome();
             }
+        } catch (e) {
+            console.error("Error decoding result link:", e);
+            alert('Invalid or corrupted result link.');
+            goToHome();
+        }
+    };
+
+    const handleHashChange = async () => {
+        const hash = window.location.hash;
+        if (hash.startsWith('#/session/')) {
+            await handleSessionRoute(hash.substring('#/session/'.length));
+        } else if (hash.startsWith('#/result/')) {
+            await handleResultRoute(hash.substring('#/result/'.length));
         }
     };
 

@@ -9,6 +9,33 @@ interface HomeViewProps {
   siteImages: SiteImagesConfig;
 }
 
+const TemplateCard: React.FC<{ template: QuizTemplate, isAction?: boolean, onStart: (t?: QuizTemplate) => void }> = ({ template, isAction = false, onStart }) => (
+  <Card className="group hover:shadow-xl transition-shadow flex flex-col p-0 overflow-hidden">
+    {template.imageUrl && (
+      <div className="overflow-hidden">
+        <img 
+          src={template.imageUrl}
+          alt={`${template.title} thumbnail`}
+          className="w-full aspect-[16/9] object-cover transition-transform duration-300 group-hover:scale-105"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+      </div>
+    )}
+    <div className="p-4 flex flex-col flex-grow">
+      <h4 className={`font-bold text-lg ${template.isOfficial ? 'text-pink-700' : 'text-gray-800'}`}>{template.title}</h4>
+      { !isAction && <p className="text-sm text-gray-500 mb-2">by {template.creatorName}</p> }
+      <p className="text-gray-600 flex-grow">{template.description}</p>
+      <Button 
+          onClick={() => onStart(isAction ? undefined : template)} 
+          className="w-full mt-4" 
+          variant={isAction ? 'primary' : 'secondary'}
+      >
+        {isAction ? "Start Creating" : "Start Quiz"}
+      </Button>
+    </div>
+  </Card>
+);
+
 const HomeView: React.FC<HomeViewProps> = ({ onStartCreator, siteImages }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState<'all' | 'english' | 'marathi' | 'hindi'>('all');
@@ -36,32 +63,8 @@ const HomeView: React.FC<HomeViewProps> = ({ onStartCreator, siteImages }) => {
       return matchesLanguage && matchesSearch;
   });
 
-  const TemplateCard: React.FC<{ template: QuizTemplate, isAction?: boolean }> = ({ template, isAction = false }) => (
-    <Card className="group hover:shadow-xl transition-shadow flex flex-col p-0 overflow-hidden">
-      {template.imageUrl && (
-        <div className="overflow-hidden">
-          <img 
-            src={template.imageUrl}
-            alt={`${template.title} thumbnail`}
-            className="w-full aspect-[16/9] object-cover transition-transform duration-300 group-hover:scale-105"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-        </div>
-      )}
-      <div className="p-4 flex flex-col flex-grow">
-        <h4 className={`font-bold text-lg ${template.isOfficial ? 'text-pink-700' : 'text-gray-800'}`}>{template.title}</h4>
-        { !isAction && <p className="text-sm text-gray-500 mb-2">by {template.creatorName}</p> }
-        <p className="text-gray-600 flex-grow">{template.description}</p>
-        <Button 
-            onClick={() => onStartCreator(isAction ? undefined : template)} 
-            className="w-full mt-4" 
-            variant={isAction ? 'primary' : 'secondary'}
-        >
-          {isAction ? "Start Creating" : "Start Quiz"}
-        </Button>
-      </div>
-    </Card>
-  );
+  // Safety fallback for image URL in case LocalStorage data is incomplete
+  const createQuizImage = siteImages?.createQuiz || 'https://i.postimg.cc/Mps3pbNt/100071928-1.jpg';
 
   return (
     <div className="space-y-8">
@@ -110,23 +113,33 @@ const HomeView: React.FC<HomeViewProps> = ({ onStartCreator, siteImages }) => {
         </Card>
         
         <div className="grid md:grid-cols-2 gap-6">
-            <TemplateCard template={{
-                id: 'custom-creator',
-                title: 'Create Your Own Quiz',
-                description: 'Design a personalized quiz with your own questions for a truly unique compatibility test.',
-                imageUrl: siteImages.createQuiz,
-                isOfficial: true,
-                questions: [],
-                creatorName: '',
-                isPublic: false,
-                createdAt: '',
-                status: 'approved',
-                language: 'english',
-                analysisConfig: officialTemplates[0].analysisConfig,
-            }} isAction={true} />
+            <TemplateCard 
+                template={{
+                    id: 'custom-creator',
+                    title: 'Create Your Own Quiz',
+                    description: 'Design a personalized quiz with your own questions for a truly unique compatibility test.',
+                    imageUrl: createQuizImage,
+                    isOfficial: true,
+                    questions: [],
+                    creatorName: '',
+                    isPublic: false,
+                    createdAt: '',
+                    status: 'approved',
+                    language: 'english',
+                    analysisConfig: officialTemplates[0].analysisConfig,
+                }} 
+                isAction={true} 
+                onStart={onStartCreator}
+            />
             
             {filteredTemplates.length > 0 ? (
-                filteredTemplates.map(template => <TemplateCard key={template.id} template={template} />)
+                filteredTemplates.map(template => (
+                    <TemplateCard 
+                        key={template.id} 
+                        template={template} 
+                        onStart={onStartCreator} 
+                    />
+                ))
             ) : (
                  <Card className="text-center md:col-start-1 md:col-span-2">
                     <p className="text-lg font-semibold text-gray-700">No Quizzes Found</p>

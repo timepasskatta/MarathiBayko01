@@ -1,3 +1,4 @@
+// NOTE: This component is currently unused in the application flow and can be considered dead code. It can be safely removed.
 import React, { useEffect } from 'react';
 import Card from '../components/Card.tsx';
 import Button from '../components/Button.tsx';

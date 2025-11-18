@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { ResultData, AdSenseConfig, InternalAd } from '../types.ts';
 import Button from '../components/Button.tsx';
 import Card from '../components/Card.tsx';
@@ -6,6 +6,7 @@ import CircularProgressBar from '../components/CircularProgressBar.tsx';
 import Confetti from '../components/Confetti.tsx';
 import AdBanner from '../components/AdBanner.tsx';
 import InternalAdBanner from '../components/InternalAdBanner.tsx';
+import { encodeObjectToBase64 } from '../utils/helpers.ts';
 
 interface ResultsViewProps {
   resultData: ResultData;
@@ -23,6 +24,33 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, adS
     questionsUsed,
     analysisConfig,
   } = resultData;
+
+  const [resultLink, setResultLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const generateLink = async () => {
+        try {
+            // Mark the result data so if it's shared, the viewer knows it's not the first time.
+            const linkData: ResultData = { ...resultData, isSecondAttempt: true };
+            const encodedData = await encodeObjectToBase64(linkData);
+            const link = `${window.location.origin}${window.location.pathname}#/result/${encodedData}`;
+            setResultLink(link);
+        } catch (error) {
+            console.error("Error generating result link:", error);
+            setResultLink("Error: Could not generate link.");
+        }
+    };
+    generateLink();
+  }, [resultData]);
+
+  const handleCopyLink = () => {
+    if (resultLink && !resultLink.startsWith('Error')) {
+        navigator.clipboard.writeText(resultLink);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const { score, matches, total, analysisText } = useMemo(() => {
     const activeQuestions = questionsUsed.filter(q => q.active);
@@ -59,10 +87,14 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, adS
     <div className="space-y-6">
       {showConfetti && <Confetti />}
 
-        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 text-center">
-            <p className="font-semibold text-gray-700">🎉 Here are your results! Take a screenshot of this page and send it to <span className="font-bold text-pink-600">{creatorProfile.name}</span> to share the fun!</p>
-        </div>
-
+      <Card className="text-center">
+        <h2 className="text-2xl md:text-3xl font-bold mb-2">Share Your Results!</h2>
+        <p className="text-gray-600 mb-4">Click the button below to copy a unique link to this results page and share it with {creatorProfile.name}!</p>
+        <Button onClick={handleCopyLink} disabled={!resultLink || resultLink.startsWith('Error')}>
+          {copied ? '✅ Copied!' : '🔗 Copy Result Link'}
+        </Button>
+      </Card>
+      
       <Card className="text-center">
         <h2 className="text-2xl md:text-3xl font-bold mb-2">Compatibility Result</h2>
         <p className="text-lg text-gray-600 mb-6">{creatorProfile.name} & {partnerProfile.name}</p>
@@ -74,7 +106,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ resultData, onBackToHome, adS
         {resultData.isSecondAttempt && (
             <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg text-sm flex items-center justify-center gap-2">
                 <span className="font-bold text-lg">⚠️</span>
-                <span><strong>Warning:</strong> This result has been viewed before. This might be a second attempt after seeing the answers.</span>
+                <span><strong>Heads up:</strong> This result link has been viewed before. The original creator has already seen the answers.</span>
             </div>
         )}
         

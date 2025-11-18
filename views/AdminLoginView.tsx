@@ -15,8 +15,10 @@ const AdminLoginView: React.FC<AdminLoginViewProps> = ({ onLoginSuccess, onBack 
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const adminUser = process.env.ADMIN_USERNAME || 'timepasskattaofficial@gmail.com';
-    const adminPass = process.env.ADMIN_PASSWORD || 'Vaibhavvaibhav@3601';
+    // Removed process.env dependency which was causing browser crashes.
+    // For a static client-side app, these hardcoded values act as the simple auth gate.
+    const adminUser = 'timepasskattaofficial@gmail.com';
+    const adminPass = 'Vaibhavvaibhav@3601';
 
     if (username === adminUser && password === adminPass) {
       onLoginSuccess();

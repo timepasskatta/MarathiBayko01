@@ -1,3 +1,4 @@
+// NOTE: This component is currently unused in the application flow and can be considered dead code. It can be safely removed.
 import React, { useState } from 'react';
 import { SessionData, QuizTemplate } from '../types.ts';
 import { encodeObjectToBase64 } from '../utils/helpers.ts';
