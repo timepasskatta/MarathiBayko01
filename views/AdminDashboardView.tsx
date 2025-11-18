@@ -76,15 +76,16 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     };
 
     const generateAndShowCode = () => {
+        // Save all other settings to localStorage first
+        setAdSenseConfig(currentAdSenseConfig);
+        setInternalAdConfig(currentInternalAdConfig);
+        setStaticPages(currentStaticPages);
+        setSiteImages(currentSiteImages);
+        alert('All settings (AdSense, Internal Ads, Theme, Static Pages) have been saved.');
+        
         const code = `import { QuizTemplate } from '../types.ts';\nimport { initialQuestions } from './questions.ts';\n\nconst defaultAnalysis = {\n    range0_25: "It seems like there are quite a few differences in your perspectives. This is a great opportunity to start some interesting conversations and learn more about each other's worlds!",\n    range26_50: "You two have some common ground, but also areas where you see things differently. Exploring these differences can be a fun adventure and a way to grow even closer.",\n    range51_75: "You're on the same wavelength most of the time! You have a solid foundation of understanding. The few differences you have can add a little spice to your relationship.",\n    range76_100: "Wow, it's like you can read each other's minds! Your connection is incredibly strong. You share a deep understanding that is truly special.",\n};\n\nexport const officialTemplates: QuizTemplate[] = ${JSON.stringify(templates, null, 2)};`;
         setGeneratedCode(code);
         setIsCodeModalOpen(true);
-    };
-    
-    // Handlers for config saving
-    const handleConfigSave = (setter: Function, config: any, name: string) => {
-        setter(config);
-        alert(`${name} settings saved!`);
     };
 
     return (
@@ -107,15 +108,15 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
             <Card>
                 <h3 className="text-xl font-bold mb-2">Publish Your Changes</h3>
-                <p className="text-gray-500 mb-4">After saving changes in all tabs, click here to generate the final code to update your website.</p>
-                <Button onClick={generateAndShowCode} className="w-auto">Save Changes & Generate Code</Button>
+                <p className="text-gray-500 mb-4">After making changes in all tabs, click here to save all settings and generate the quiz data code.</p>
+                <Button onClick={generateAndShowCode} className="w-auto">Save All Settings & Generate Code</Button>
             </Card>
             
             {activeTab === 'templates' && <TemplatesManager openEditor={openEditor} templates={templates} onDelete={handleTemplateDelete} />}
-            {activeTab === 'adsense' && <ConfigSaver onSave={() => handleConfigSave(setAdSenseConfig, currentAdSenseConfig, 'AdSense')}><AdSenseConfigUI config={currentAdSenseConfig} setConfig={setCurrentAdSenseConfig} /></ConfigSaver>}
-            {activeTab === 'internal_ads' && <ConfigSaver onSave={() => handleConfigSave(setInternalAdConfig, currentInternalAdConfig, 'Internal Ad')}><InternalAdsConfigUI config={currentInternalAdConfig} setConfig={setCurrentInternalAdConfig} /></ConfigSaver>}
-            {activeTab === 'theme' && <ConfigSaver onSave={() => handleConfigSave(setSiteImages, currentSiteImages, 'Theme')}><ThemeConfigUI config={currentSiteImages} setConfig={setCurrentSiteImages} /></ConfigSaver>}
-            {activeTab === 'static_pages' && <ConfigSaver onSave={() => handleConfigSave(setStaticPages, currentStaticPages, 'Static Pages')}><StaticPagesUI config={currentStaticPages} setConfig={setCurrentStaticPages} /></ConfigSaver>}
+            {activeTab === 'adsense' && <Card><AdSenseConfigUI config={currentAdSenseConfig} setConfig={setCurrentAdSenseConfig} /></Card>}
+            {activeTab === 'internal_ads' && <Card><InternalAdsConfigUI config={currentInternalAdConfig} setConfig={setCurrentInternalAdConfig} /></Card>}
+            {activeTab === 'theme' && <Card><ThemeConfigUI config={currentSiteImages} setConfig={setCurrentSiteImages} /></Card>}
+            {activeTab === 'static_pages' && <Card><StaticPagesUI config={currentStaticPages} setConfig={setCurrentStaticPages} /></Card>}
             
             {isEditorOpen && editingTemplate && (
                 <QuizEditorModal template={editingTemplate} setTemplate={setEditingTemplate} onClose={() => setIsEditorOpen(false)} onSave={handleSaveTemplate} />
@@ -132,13 +133,6 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 };
 
 // --- Child Components for Admin ---
-
-const ConfigSaver: React.FC<{onSave: () => void, children: React.ReactElement}> = ({ onSave, children }) => (
-    <Card>
-        {children}
-        <Button onClick={onSave} className="mt-6">Save Settings</Button>
-    </Card>
-);
 
 const TemplatesManager: React.FC<{openEditor: (t: QuizTemplate | null) => void, templates: QuizTemplate[], onDelete: (id: string) => void}> = ({ openEditor, templates, onDelete }) => (
     <Card>
