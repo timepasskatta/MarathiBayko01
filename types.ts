@@ -30,6 +30,8 @@ export interface QuizTemplate {
     createdAt: string;
     status: 'pending' | 'approved' | 'rejected';
     imageUrl: string;
+    language?: 'english' | 'marathi' | 'hindi';
+    keywords?: string[];
     analysisConfig: {
       range0_25: string;
       range26_50: string;

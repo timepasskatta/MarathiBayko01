@@ -47,6 +47,7 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       } else {
         setEditingTemplate({
           id: `new-${Date.now()}`, title: '', description: '', creatorName: 'Marathi Bayko', questions: [], isPublic: true, isOfficial: true, createdAt: new Date().toISOString(), status: 'approved', imageUrl: '',
+          language: 'english',
           analysisConfig: { range0_25: '', range26_50: '', range51_75: '', range76_100: '' }
         });
       }
@@ -231,6 +232,18 @@ const QuizEditorModal: React.FC<{template: QuizTemplate, setTemplate: React.Disp
                 <div className="flex-grow overflow-y-auto space-y-4 pr-2 text-left">
                     <TextInput label="Quiz Title" name="title" value={template.title} onChange={e => setTemplate(p => p ? {...p, title: e.target.value} : null)} />
                     <TextAreaInput label="Description" name="description" value={template.description} onChange={e => setTemplate(p => p ? {...p, description: e.target.value} : null)} />
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700">Language</label>
+                        <select
+                            value={template.language || 'english'}
+                            onChange={e => setTemplate(p => p ? { ...p, language: e.target.value as any } : null)}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500"
+                        >
+                            <option value="english">English</option>
+                            <option value="marathi">Marathi</option>
+                            <option value="hindi">Hindi</option>
+                        </select>
+                    </div>
                     <TextInput label="Thumbnail Image URL" name="imageUrl" value={template.imageUrl} onChange={e => setTemplate(p => p ? {...p, imageUrl: e.target.value} : null)} />
                     <div className="space-y-4">
                         <h4 className="font-semibold mt-4">Questions</h4>

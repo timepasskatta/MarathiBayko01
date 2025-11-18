@@ -89,6 +89,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/3wcqnCZG/1000719284.jpg',
+    language: 'english',
+    keywords: ['standard', 'comprehensive', 'relationship', 'test', 'compatibility'],
     analysisConfig: {
       range0_25: "Looks like there's a universe of things to discover about each other! Every mismatched answer is a doorway to a new conversation. Start exploring!",
       range26_50: "You've got a good mix of similarities and differences. This is what makes a relationship exciting! It's a great chance to learn and grow together.",
@@ -107,6 +109,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/FRrp4fsk/100071916.jpg',
+    language: 'english',
+    keywords: ['girlfriend', 'boyfriend', 'gf', 'bf', 'dating', 'couple', 'romantic'],
     analysisConfig: defaultAnalysis,
   },
   {
@@ -120,6 +124,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/pXwBdcXw/100071916-1.jpg',
+    language: 'english',
+    keywords: ['husband', 'wife', 'married', 'couple', 'lifelong', 'spouse'],
     analysisConfig: defaultAnalysis,
   },
   {
@@ -133,6 +139,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/Z5fKc2v4/100071917.jpg',
+    language: 'english',
+    keywords: ['friends', 'bestie', 'friendship', 'bff'],
     analysisConfig: defaultAnalysis,
   },
   {
@@ -146,6 +154,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/7Y8VHQ6y/100071918.jpg',
+    language: 'english',
+    keywords: ['siblings', 'brother', 'sister', 'family'],
     analysisConfig: defaultAnalysis,
   },
   {
@@ -159,6 +169,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/2y8ChxjN/100071918-1.jpg',
+    language: 'english',
+    keywords: ['crush', 'love', 'secret', 'admirer', 'romantic'],
     analysisConfig: defaultAnalysis,
   },
   {
@@ -172,6 +184,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/y8XBQ5JH/100071919-2.jpg',
+    language: 'english',
+    keywords: ['character', 'verification', 'values', 'principles', 'ethics'],
     analysisConfig: defaultAnalysis,
   },
   {
@@ -185,6 +199,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/KzpHp7rT/100071919.jpg',
+    language: 'english',
+    keywords: ['loyalty', 'trust', 'commitment', 'honesty', 'relationship'],
     analysisConfig: defaultAnalysis,
   },
   {
@@ -198,6 +214,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/v8jKWzmR/100071919-1.jpg',
+    language: 'english',
+    keywords: ['teacher', 'student', 'education', 'school', 'rapport'],
     analysisConfig: defaultAnalysis,
   },
   {
@@ -211,6 +229,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/mDqG1Wnv/100071923-2.jpg',
+    language: 'english',
+    keywords: ['employee', 'manager', 'work', 'office', 'team', 'synergy'],
     analysisConfig: defaultAnalysis,
   },
   {
@@ -224,6 +244,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/NGWNyjdd/100071923-1.jpg',
+    language: 'english',
+    keywords: ['iq', 'check', 'fun', 'tricky', 'sherlock', 'brain'],
     analysisConfig: defaultAnalysis,
   },
   {
@@ -237,6 +259,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/0j6pk7gR/100071923.jpg',
+    language: 'english',
+    keywords: ['honesty', 'loyalty', 'couple', 'trust', 'commitment', 'relationship'],
     analysisConfig: defaultAnalysis,
   },
 
@@ -252,6 +276,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/3wcqnCZG/1000719284.jpg',
+    language: 'marathi',
+    keywords: ['standard', 'comprehensive', 'relationship', 'test', 'compatibility', 'मानक', 'सुसंगतता', 'चाचणी'],
     analysisConfig: {
         range0_25: "असे दिसते की एकमेकांबद्दल शोधण्यासारख्या बऱ्याच गोष्टी आहेत! प्रत्येक जुळणारे उत्तर एका नवीन संभाषणाचे दार आहे. शोध सुरू करा!",
         range26_50: "तुमच्यात साम्य आणि फरकांचे चांगले मिश्रण आहे. हेच एका नात्याला रोमांचक बनवते! एकत्र शिकण्याची आणि वाढण्याची ही एक उत्तम संधी आहे.",
@@ -270,6 +296,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/FRrp4fsk/100071916.jpg',
+    language: 'marathi',
+    keywords: ['girlfriend', 'boyfriend', 'gf', 'bf', 'dating', 'couple', 'romantic', 'प्रेयसी', 'प्रियकर'],
     analysisConfig: defaultAnalysisMarathi,
   },
   {
@@ -283,6 +311,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/pXwBdcXw/100071916-1.jpg',
+    language: 'marathi',
+    keywords: ['husband', 'wife', 'married', 'couple', 'spouse', 'पती', 'पत्नी', 'विवाहित'],
     analysisConfig: defaultAnalysisMarathi,
   },
   {
@@ -296,6 +326,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/Z5fKc2v4/100071917.jpg',
+    language: 'marathi',
+    keywords: ['friends', 'bestie', 'friendship', 'bff', 'मित्र', 'मैत्री'],
     analysisConfig: defaultAnalysisMarathi,
   },
   {
@@ -309,6 +341,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/7Y8VHQ6y/100071918.jpg',
+    language: 'marathi',
+    keywords: ['siblings', 'brother', 'sister', 'family', 'भावंड', 'भाऊ', 'बहीण'],
     analysisConfig: defaultAnalysisMarathi,
   },
   {
@@ -322,6 +356,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/2y8ChxjN/100071918-1.jpg',
+    language: 'marathi',
+    keywords: ['crush', 'love', 'secret', 'admirer', 'romantic', 'क्रश', 'प्रेम'],
     analysisConfig: defaultAnalysisMarathi,
   },
   {
@@ -335,6 +371,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/y8XBQ5JH/100071919-2.jpg',
+    language: 'marathi',
+    keywords: ['character', 'verification', 'values', 'principles', 'ethics', 'चारित्र्य', 'पडताळणी'],
     analysisConfig: defaultAnalysisMarathi,
   },
   {
@@ -348,6 +386,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/KzpHp7rT/100071919.jpg',
+    language: 'marathi',
+    keywords: ['loyalty', 'trust', 'commitment', 'honesty', 'relationship', 'निष्ठा', 'विश्वास', 'वचनबद्धता'],
     analysisConfig: defaultAnalysisMarathi,
   },
   {
@@ -361,6 +401,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/v8jKWzmR/100071919-1.jpg',
+    language: 'marathi',
+    keywords: ['teacher', 'student', 'education', 'school', 'rapport', 'शिक्षक', 'विद्यार्थी'],
     analysisConfig: defaultAnalysisMarathi,
   },
   {
@@ -374,6 +416,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/mDqG1Wnv/100071923-2.jpg',
+    language: 'marathi',
+    keywords: ['employee', 'manager', 'work', 'office', 'team', 'synergy', 'कर्मचारी', 'व्यवस्थापक'],
     analysisConfig: defaultAnalysisMarathi,
   },
   {
@@ -387,6 +431,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/NGWNyjdd/100071923-1.jpg',
+    language: 'marathi',
+    keywords: ['iq', 'check', 'fun', 'tricky', 'sherlock', 'brain', 'iq', 'तपासणी', 'मनोरंजन'],
     analysisConfig: defaultAnalysisMarathi,
   },
   {
@@ -400,6 +446,8 @@ export const officialTemplates: QuizTemplate[] = [
     createdAt: new Date().toISOString(),
     status: 'approved',
     imageUrl: 'https://i.postimg.cc/0j6pk7gR/100071923.jpg',
+    language: 'marathi',
+    keywords: ['honesty', 'loyalty', 'couple', 'trust', 'commitment', 'relationship', 'प्रामाणिकपणा', 'निष्ठा', 'जोडपे'],
     analysisConfig: defaultAnalysisMarathi,
   },
 ];
