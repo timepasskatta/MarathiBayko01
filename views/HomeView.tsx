@@ -17,7 +17,6 @@ const TemplateCard: React.FC<{ template: QuizTemplate, isAction?: boolean, onSta
           src={template.imageUrl}
           alt={`${template.title} thumbnail`}
           className="w-full aspect-[16/9] object-cover transition-transform duration-300 group-hover:scale-105"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
         />
       </div>
     )}
